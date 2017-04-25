@@ -1,0 +1,25 @@
+---
+resources:
+- name: bosh-config-resource
+  type: git
+  source:
+    uri: https://github.com/starkandwayne/bosh-config-resource.git
+    branch: master
+
+- name: docker-bosh-config-resource
+  type: docker-image
+  source:
+    email: {{docker-hub-email}}
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+    repository: {{docker-hub-image-dummy-resource}}
+
+jobs:
+- name: job-publish
+  public: true
+  serial: true
+  plan:
+  - get: bosh-config-resource
+  - put: docker-bosh-config-resource
+    params:
+      build: bosh-config-resource

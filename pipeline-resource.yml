@@ -1,0 +1,28 @@
+resource_types:
+- name: bosh-config-resource
+  type: docker-image
+  source:
+    repository: starkandwayne/bosh-config-resource
+
+resources:
+- name: bosh-lite-cloud-config
+  type: bosh-config-resource
+  source: 
+    uri: https://192.168.50.4:25555
+    username: admin
+    password: admin
+
+- name: bosh-lite-runtime-config
+  type: bosh-config-resource
+  source: 
+    uri: https://192.168.50.4:25555
+    username: admin
+    password: admin
+
+jobs:
+- name: job-bosh-config
+  public: true
+  serial: true
+  plan:
+  - get: bosh-lite-cloud-config
+  - get: bosh-lite-runtime-config
