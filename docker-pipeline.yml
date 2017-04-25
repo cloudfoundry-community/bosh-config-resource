@@ -1,12 +1,12 @@
 ---
 resources:
-- name: bosh-config-resource
+- name: input-scripts 
   type: git
   source:
     uri: https://github.com/starkandwayne/bosh-config-resource.git
     branch: master
 
-- name: docker-bosh-config-resource
+- name: docker-image-bosh-config-resource
   type: docker-image
   source:
     email: {{docker-hub-email}}
@@ -15,11 +15,11 @@ resources:
     repository: {{docker-hub-image-dummy-resource}}
 
 jobs:
-- name: job-publish
+- name: job-create-docker-image
   public: true
   serial: true
   plan:
-  - get: bosh-config-resource
-  - put: docker-bosh-config-resource
+  - get: input-scripts
+  - put: docker-image-bosh-config-resource
     params:
-      build: bosh-config-resource
+      build: input-scripts

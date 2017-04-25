@@ -32,6 +32,6 @@ fi
 pushd $DIR
   fly sp -t ${fly_target} configure -c docker-pipeline.yml -p pipeline-docker --load-vars-from ${stub} -n
   fly -t ${fly_target} unpause-pipeline --pipeline pipeline-docker
-  fly -t ${fly_target} trigger-job -j pipeline-docker/job-publish
-  fly -t ${fly_target} watch -j pipeline-docker/job-publish
+  fly -t ${fly_target} trigger-job -j pipeline-docker/job-create-docker-image
+  fly -t ${fly_target} watch -j pipeline-docker/job-create-docker-image
 popd
