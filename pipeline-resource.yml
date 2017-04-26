@@ -11,6 +11,8 @@ resources:
     uri: https://192.168.50.4:25555
     username: admin
     password: admin
+    ca_cert: FIXME
+    config: cloud
 
 - name: bosh-lite-runtime-config
   type: bosh-config-resource
@@ -18,6 +20,8 @@ resources:
     uri: https://192.168.50.4:25555
     username: admin
     password: admin
+    ca_cert: FIXME
+    config: runtime
 
 jobs:
 - name: job-bosh-config

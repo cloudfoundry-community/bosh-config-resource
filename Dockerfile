@@ -1,5 +1,5 @@
 FROM busybox
 
-COPY check /opt/resource/check
-COPY in /opt/resource/in
-COPY out /opt/resource/out
+COPY assets/check /opt/resource/check
+COPY assets/in /opt/resource/in
+COPY assets/out /opt/resource/out

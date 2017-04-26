@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# echo '{"version": {"ref": "123"}}'
+
+echo "No `put` funtionality provided by script-resource!"
+exit 1
