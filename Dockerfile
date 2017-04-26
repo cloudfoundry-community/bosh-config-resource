@@ -1,4 +1,4 @@
-FROM busybox
+FROM gliderlabs/alpine:3.3
 
 RUN apk add --no-cache curl bash jq
 
