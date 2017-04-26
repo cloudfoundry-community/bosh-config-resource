@@ -30,8 +30,8 @@ fi
 
 
 pushd $DIR
-  fly sp -t ${fly_target} configure -c pipeline-resource.yml -p pipeline-bosh-lite --load-vars-from ${stub} -n
-  fly -t ${fly_target} unpause-pipeline --pipeline pipeline-bosh-lite
-  fly -t ${fly_target} trigger-job -j pipeline-bosh-lite/job-bosh-config
-  fly -t ${fly_target} watch -j pipeline-bosh-lite/job-bosh-config
+  fly sp -t ${fly_target} configure -c pipeline-resource.yml -p pipeline-bosh-resource --load-vars-from ${stub} -n
+  fly -t ${fly_target} unpause-pipeline --pipeline pipeline-bosh-resource
+  fly -t ${fly_target} trigger-job -j pipeline-bosh-resource/job-bosh-config
+  fly -t ${fly_target} watch -j pipeline-bosh-resource/job-bosh-config
 popd
