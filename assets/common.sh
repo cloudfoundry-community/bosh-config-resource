@@ -44,5 +44,5 @@ then
 fi
 
 calc_reference() {
-  bosh cloud-config | shasum | cut -f1 -d' '
+  bosh -e $uri --client $username --client-secret $password --ca-cert $ca_cert ${config}-config | shasum | cut -f1 -d' '
 }
