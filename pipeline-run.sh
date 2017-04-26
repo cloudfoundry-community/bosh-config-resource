@@ -5,7 +5,7 @@ set -e
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 export ATC_URL=${ATC_URL:-"http://10.244.8.2:8080"}
-export fly_target=${fly_target:-target-bosh-lite}
+export fly_target=${fly_target:-tbl}
 echo "Concourse API target: ${fly_target}"
 echo "Concourse API: $ATC_URL"
 echo "Name: $(basename $DIR)"

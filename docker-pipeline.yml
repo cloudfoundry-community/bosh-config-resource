@@ -5,6 +5,7 @@ resources:
   source:
     uri: https://github.com/starkandwayne/bosh-config-resource.git
     branch: master
+    paths: [Dockerfile]
 
 - name: docker-image-bosh-config-resource
   type: docker-image
@@ -20,6 +21,6 @@ jobs:
   serial: true
   plan:
   - get: input-scripts
+    trigger: true
   - put: docker-image-bosh-config-resource
-    params:
-      build: input-scripts
+    params: {build: input-scripts}
