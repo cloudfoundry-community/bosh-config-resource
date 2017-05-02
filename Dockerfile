@@ -2,7 +2,7 @@ FROM gliderlabs/alpine:3.3
 
 ENV BOSH_VERSION=2.0.1
 
-RUN apk add --no-cache curl bash jq
+RUN apk add curl bash jq coreutils --no-cache
 RUN curl -L >/usr/bin/bosh https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-${BOSH_VERSION}-linux-amd64 \
   && chmod 0755 /usr/bin/bosh
 
