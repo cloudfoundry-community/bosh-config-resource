@@ -16,16 +16,12 @@ if [ -z "$destination" ]; then
   exit 1
 fi
 
-cat <<SCRIPT > $destination/$filename
-#!$shell
-$body
-SCRIPT
+last_ref=$(jq -r '.version.ref // ""' < $payload)
+echo $last_ref > $destination/version
 
-chmod 755 $destination/$filename
-
-new_ref="$(calc_reference)"
+bosh -e "$uri" --client "$username" --client-secret "$password" --ca-cert "$ca_cert" "${config}-config" > $destination/${config}-config.yml
 
 jq -n "{
-  \"version\": {\"ref\": \"$new_ref\"},
-  \"metadata\": [{\"name\": \"filename\", \"value\": \"$filename\"}]
+  \"version\": {\"ref\": \"$last_ref\"},
+  \"metadata\": [{\"name\": \"sha1\", \"value\": \"$last_ref\"}]
 }" >&3
