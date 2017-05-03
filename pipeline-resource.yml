@@ -11,7 +11,36 @@ resources:
     uri: https://192.168.50.4:25555
     username: admin
     password: admin
-    ca_cert: FIXME
+    ca_cert: |+
+      -----BEGIN CERTIFICATE-----
+      MIIE5DCCAsygAwIBAgIBAjANBgkqhkiG9w0BAQ0FADAbMRkwFwYDVQQDExBjYS5i
+      b3NoLWxpdGUuY29tMB4XDTE3MDQyNjE5MzI0OFoXDTI3MDQyNDE5MzI0OFowGzEZ
+      MBcGA1UEAxMQY2EuYm9zaC1saXRlLmNvbTCCAiIwDQYJKoZIhvcNAQEBBQADggIP
+      ADCCAgoCggIBAM9XGa4NL28/JMd93Pq6NvdnRu2Mk1K70GrLLGcK8kqRwsmjFPVN
+      Ix1Des2hsy4Ra6NoPm11WnTDEUNoGSnPN2UzPv+sDphmphSHdgfi0+UNksYtFtlx
+      pd2CdZ3eErutoqcLc5z1byOKNxFNbG4sJ8bAFWEpMfzUGyd7MkOkIKWtPa4k3ypw
+      MFoMrKQsgCnyzr3hgN1Jz28dLIAJfZqh5JaQylWNKLlrTP1VyIZawZEYs32c9gxM
+      GhZXidWPVTYKp0QPjVdDocQ7gklOWU772suaIcZCPcgNa2YxDv/QixxDhzdCqyht
+      KRpxQGmJ9bzJY7OsahLI+ouF0gPXzKaRxILbIHNB2g3819+4duX1oJhsi6cJ6XRw
+      CL3l5tOhSWJUPt0WGSOiPun2cIw21Vu2E4qz1Pz1rmTkU84633CAsexTQnF5tXLA
+      cDt6KKbr2beeJBkk9gKxAlqjb88cbbCd3HdUc467bk8Gc5tV7r8kfBGv8hKDAqKk
+      ORq8scgCqLowvQ+dqpB57HTWLMcEXKJdZj2D5IJiw3/eEiqk5ukk4MFXevfCwCGC
+      HMqEDfEgjRLvqJAPDhXm1Rg8vl3Ef6mpGHNhx2lKGaGixeLLWhpVm1cUUu9Lh7P6
+      BgHDLeD1C8H0FfT/qaRIOrC9v2/sdNorogbyEfWLVDwCAWM0YILPR7/VAgMBAAGj
+      MzAxMBIGA1UdEwEB/wQIMAYBAf8CAQEwGwYDVR0RBBQwEoIQY2EuYm9zaC1saXRl
+      LmNvbTANBgkqhkiG9w0BAQ0FAAOCAgEASpvUAbxkP0gU/TfMRKj7qaLrmalM+asr
+      IysYDa98rJvRbdxSNQa+9yHFm4yFzO4nwo3b2ZyUIKT2Q9L59oxw0lv8R2ewOtLp
+      qu5TjOPmc1d9mu4xuviG3+XCgmQMgsRbFkNQNuKsbmvSZ4BXnPa0Uh5PM0HcPcSa
+      i0mNXMn0ToMm+53bsgOvpKS4LWAvzHHG7v6iAehflFumBqgEsnhdoSEdOA/kHUVA
+      IqQM1tGN1l65cxHcQ47EUa463a3sQBB8hDPOkLFmCRWDW/FVSksG6G/uI2sO8OLi
+      NF+1jHGbBABHaGFKPwZgi3WdEDNBQ1FT4/ma3pV6yXXmgNlpG1BFmNMsJQ38+XYE
+      Fsnu43Ngkgb4KIYmXcbPTa5wVs4799gpcjjDXpLNHYl7XEo+HfC9KkSpE+v3nXxD
+      ku1kjokJ/968W5EdyPCTf9mRVY6z29Yf6JzxfLJNwH/gKy49hQtK71x4JFxxD3oO
+      +f2GRGhLUpKiQ/UIGtFepzd8ZLm7IBYEIFYRME2OtE153boqxipV9deDNH5vfAFG
+      wm3hMlEEvjOc6vSy3X8rehNCZSxnd0CDzD9rdIdw9t1FCRJeqJYgzaGaZ0WFPkdC
+      kiVbUDC4YCxFbymC1Wk5QQxk/n/0wsxefJhfNn8BQ4aEFCUo5S0bAY3KEXGaYdnY 
+      ykkQARvk13Q=
+      -----END CERTIFICATE-----
     config: cloud
 
 - name: bosh-lite-runtime-config

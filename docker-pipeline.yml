@@ -5,7 +5,7 @@ resources:
   source:
     uri: https://github.com/starkandwayne/bosh-config-resource.git
     branch: master
-    paths: [Dockerfile]
+    paths: [Dockerfile, assets/*]
 
 - name: docker-image-bosh-config-resource
   type: docker-image
