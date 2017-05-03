@@ -88,3 +88,17 @@ jobs:
   plan:
   - get: bosh-lite-cloud-config
   - get: bosh-lite-runtime-config
+
+  - task: cat-config
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      inputs:
+      - name: bosh-lite-cloud-config
+      - name: bosh-lite-runtime-config
+
+      run:
+        path: cat
+        args: [bosh-lite-cloud-config/cloud-config.yml, bosh-lite-runtime-config/runtime-config.yml]
