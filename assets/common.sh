@@ -2,9 +2,9 @@ payload=$(mktemp $TMPDIR/script-request.XXXXXX)
 
 cat > $payload <&0
 
-uri=$(jq -r '.source.uri // ""' < $payload)
-username="$(jq -r '.source.username // ""' < $payload)"
-password=$(jq -r '.source.password // ""' < $payload)
+uri=$(jq -r '.source.target // ""' < $payload)
+username="$(jq -r '.source.client // ""' < $payload)"
+password=$(jq -r '.source.client_secret // ""' < $payload)
 ca_cert=$(jq -r '.source.ca_cert // ""' < $payload)
 config=$(jq -r '.source.config // ""' < $payload)
 
