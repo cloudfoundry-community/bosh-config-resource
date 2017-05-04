@@ -15,7 +15,7 @@ meta:
     email:    (( vault "secret/dockerhub:email" ))
     username: (( vault "secret/dockerhub:username" ))
     password: (( vault "secret/dockerhub:password" ))
-    repository: starkandwayne/bosh-config-resource
+    repository: cfcommunity/bosh-config-resource
 
   github:
     owner: starkandwayne
