@@ -1,0 +1,28 @@
+---
+# settings for the bosh-config-resource pipeline
+meta:
+  target: sw
+  url:    https://ci.starkandwayne.com
+  name:   bosh-config-resource
+
+  initial_version: 0.0.1
+
+  aws:
+    access_key: (( vault "secret/aws/cfcommunity:access" ))
+    secret_key: (( vault "secret/aws/cfcommunity:secret" ))
+
+  dockerhub:
+    email:    (( vault "secret/dockerhub:email" ))
+    username: (( vault "secret/dockerhub:username" ))
+    password: (( vault "secret/dockerhub:password" ))
+    repository: cfcommunity/bosh-config-resource
+
+  github:
+    owner: starkandwayne
+    repo:  bosh-config-resource
+    private_key:  (( vault "secret/pipelines/bosh-config-resource/github:private" ))
+    access_token: (( vault "secret/pipelines/bosh-config-resource/github:token" ))
+
+  slack:
+    webhook: (( vault "secret/pipelines/bosh-config-resource/slack:webhook" ))
+    channel: '#botspam'
