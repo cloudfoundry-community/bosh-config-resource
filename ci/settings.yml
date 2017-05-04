@@ -18,7 +18,7 @@ meta:
     repository: cfcommunity/bosh-config-resource
 
   github:
-    owner: starkandwayne
+    owner: cloudfoundry-community
     repo:  bosh-config-resource
     private_key:  (( vault "secret/pipelines/bosh-config-resource/github:private" ))
     access_token: (( vault "secret/pipelines/bosh-config-resource/github:token" ))
