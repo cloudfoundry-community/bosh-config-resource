@@ -34,7 +34,6 @@ meta:
     access_token: (( param "Please generate a Personal Access Token and specify it here" ))
 
   dockerhub:
-    email:      (( param "Please specify the email address for your Dockerhub account" ))
     username:   (( param "Please specify the username for your Dockerhub account" ))
     password:   (( param "Please specify the password for your Dockerhub account" ))
     repository: (( param "Please specify the name of the image (repo/name) that you are building" ))
