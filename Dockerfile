@@ -1,6 +1,6 @@
 FROM gliderlabs/alpine:3.3
 
-ENV BOSH_VERSION=2.0.1
+ENV BOSH_VERSION=5.4.0
 
 RUN apk add curl bash jq coreutils --no-cache
 RUN curl -L >/usr/bin/bosh https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-${BOSH_VERSION}-linux-amd64 \

@@ -19,7 +19,7 @@ fi
 last_ref=$(jq -r '.version.ref // ""' < $payload)
 echo $last_ref > $destination/version
 
-bosh -e "$uri" --client "$username" --client-secret "$password" --ca-cert "$ca_cert" "${config}-config" > $destination/${config}-config.yml
+bosh "${config}-config" > $destination/${config}-config.yml
 
 jq -n "{
   \"version\": {\"ref\": \"$last_ref\"},

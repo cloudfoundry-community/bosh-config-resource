@@ -1,4 +1,28 @@
 #!/bin/sh
+# vim: set ft=sh
 
-echo "No `put` funtionality provided by script-resource!"
-exit 1
+set -e
+
+cd "${1}"
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+source $(dirname $0)/common.sh
+
+manifest=$(jq -r '.params.manifest // ""' < "${payload}")
+if [ -z "$manifest" ]
+then
+    echo >&2 "invalid payload (missing params.manifest):"
+    cat $payload >&2
+    exit 1
+fi
+
+bosh "update-${config}-config" "${manifest}"
+
+new_ref="$(calc_reference)"
+
+jq -n "{
+  \"version\": {\"ref\": \"$new_ref\"},
+  \"metadata\": [{\"name\": \"sha1\", \"value\": \"$new_ref\"}]
+}" >&3
