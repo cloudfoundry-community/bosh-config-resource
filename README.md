@@ -48,7 +48,7 @@ This will download the config manifest. It will place two files in the target di
 
 _Note_: Only the most recent version is fetchable
 
-### `out`: Deploy or Delete a BOSH deployment (defaults to deploy)
+### `out`: Update config on BOSH director
 
 This will upload any given stemcells and releases, lock them down in the
 deployment manifest and then deploy.
