@@ -12,7 +12,7 @@ source $(dirname $0)/common.sh
 last_ref=$(jq -r '.version.ref // ""' < $payload)
 new_ref="$(calc_reference)"
 
-if [[ "$new_ref" == "$last_refs" ]]
+if [[ "$new_ref" == "$last_ref" ]]
 then
   echo "[]" >&3
 else

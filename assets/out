@@ -17,9 +17,13 @@ then
     cat $payload >&2
     exit 1
 fi
+releases="$(jq -r '.params.releases[] // ""' < "${payload}" | xargs)"
+for release in $releases
+do
+bosh ur "$release"
+done
 
 bosh "update-${config}-config" "${manifest}"
-
 new_ref="$(calc_reference)"
 
 jq -n "{
