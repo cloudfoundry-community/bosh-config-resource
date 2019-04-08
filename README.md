@@ -56,10 +56,14 @@ deployment manifest and then deploy.
 #### Parameters
 
 * `manifest`: *Required.* Path to a BOSH config manifest file.
+* `releases`: Array of paths to bosh releases to upload
 
 ``` yaml
 # Update config
 - put: staging
   params:
     manifest: path/to/manifest.yml
+    releases:
+      - path/to/first/release
+      - path/to/second/release
 ```
