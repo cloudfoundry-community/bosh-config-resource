@@ -16,10 +16,10 @@ if [ -z "$destination" ]; then
   exit 1
 fi
 
-last_ref=$(jq -r '.version.ref // ""' < $payload)
+last_ref=$(jq -r '.version.ref // ""' < $payload )
 echo $last_ref > $destination/version
 
-bosh "${config}-config" > $destination/${config}-config.yml
+bosh config --type="${config}" --name="${name}" > $destination/${config}-config.yml
 
 jq -n "{
   \"version\": {\"ref\": \"$last_ref\"},

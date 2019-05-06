@@ -23,7 +23,8 @@ do
 bosh ur "$release"
 done
 
-bosh "update-${config}-config" "${manifest}"
+bosh update-config --type="${config}" --name="${name}" "${manifest}"
+
 new_ref="$(calc_reference)"
 
 jq -n "{
