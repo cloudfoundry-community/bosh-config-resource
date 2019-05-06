@@ -23,11 +23,7 @@ do
 bosh ur "$release"
 done
 
-if [ -z "${name}" ]; then
-  bosh "update-${config}-config" "${manifest}"
-else
-  bosh update-config --type="${config}" --name="${name}" "${manifest}"
-fi
+bosh update-config --type="${config}" --name="${name}" "${manifest}"
 
 new_ref="$(calc_reference)"
 
