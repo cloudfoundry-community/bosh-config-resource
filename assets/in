@@ -18,8 +18,11 @@ fi
 
 last_ref=$(jq -r '.version.ref // ""' < $payload)
 echo $last_ref > $destination/version
-
-bosh "${config}-config" > $destination/${config}-config.yml
+if [ -z "${name}" ]; then
+  bosh "${config}-config" > $destination/${config}-config.yml
+else
+  bosh config "${config}" --name="${name}" > $destination/${config}-config.yml
+fi
 
 jq -n "{
   \"version\": {\"ref\": \"$last_ref\"},

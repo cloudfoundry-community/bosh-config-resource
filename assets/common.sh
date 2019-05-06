@@ -7,6 +7,7 @@ client="$(jq -r '.source.client // ""' < $payload)"
 client_secret=$(jq -r '.source.client_secret // ""' < $payload)
 ca_cert=$(jq -r '.source.ca_cert // ""' < $payload)
 config=$(jq -r '.source.config // ""' < $payload)
+name=$(jq -r '.source.name // ""' < $payload)
 
 if [ -z "$target" ]
 then
@@ -50,5 +51,9 @@ export BOSH_CA_CERT="${ca_cert}"
 export BOSH_NON_INTERACTIVE=1
 
 calc_reference() {
-    bosh "${config}-config" | sha1sum | cut -f1 -d' '
+    if [ -z "${name}" ]; then
+        bosh "${config}-config" | sha1sum | cut -f1 -d' '
+    else
+        bosh config "$config" --name="${name}" | sha1sum | cut -f1 -d' '
+    fi
 }

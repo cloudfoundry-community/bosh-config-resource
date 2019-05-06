@@ -23,7 +23,12 @@ do
 bosh ur "$release"
 done
 
-bosh "update-${config}-config" "${manifest}"
+if [ -z "${name}" ]; then
+  bosh "update-${config}-config" "${manifest}"
+else
+  bosh update-config --type="${config}" --name="${name}" "${manifest}"
+fi
+
 new_ref="$(calc_reference)"
 
 jq -n "{
