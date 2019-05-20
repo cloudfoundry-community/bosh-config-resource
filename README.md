@@ -23,6 +23,8 @@ resource_types:
 * `ca_cert`: *Required.* CA certificate used to validate SSL connections to Director and UAA. If omitted, the director's
   certificate must be already trusted.
 * `config`: *Required.* Type of config to update, valid values are: `cloud` and `runtime`
+* `name`: *Optional.* Property for named-configs. If omitted, will default to `default`
+
 
 ### Example
 
@@ -35,6 +37,7 @@ resource_types:
     client_secret: admin
     ca_cert: "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----"
     config: cloud
+    name: my-named-config
 ```
 
 ## Behaviour
