@@ -5,9 +5,9 @@ cat > $payload <&0
 target=$(jq -r '.source.target // ""' < $payload)
 client="$(jq -r '.source.client // ""' < $payload)"
 client_secret=$(jq -r '.source.client_secret // ""' < $payload)
-ca_cert=$(jq -r '.source.ca_cert // ""' < $payload)
+ca_cert=$(jq -r '.source.ca_cert // null' < $payload)
 config=$(jq -r '.source.config // ""' < $payload)
-name=$(jq -r '.source.name // ""' < $payload) 
+name=$(jq -r '.source.name // ""' < $payload)
 
 if [ -z "$name" ]; then
   name=default
@@ -34,13 +34,6 @@ then
     exit 1
 fi
 
-if [ -z "$ca_cert" ]
-then
-    echo >&2 "invalid payload (missing source.ca_cert):"
-    cat $payload >&2
-    exit 1
-fi
-
 if [[ "$config" != "cloud" && "$config" != "runtime" ]]
 then
     echo >&2 "invalid payload (source.config should be 'cloud' or 'runtime'):"
@@ -51,7 +44,7 @@ fi
 export BOSH_ENVIRONMENT="${target}"
 export BOSH_CLIENT="${client}"
 export BOSH_CLIENT_SECRET="${client_secret}"
-export BOSH_CA_CERT="${ca_cert}"
+[[ "$ca_cert" != "null" ]] && export BOSH_CA_CERT="${ca_cert}"
 export BOSH_NON_INTERACTIVE=1
 
 calc_reference() {
