@@ -20,7 +20,7 @@ resource_types:
   must be specified via out parameters, as documented below.
 * `client`: *Required.* The username or UAA client ID for the BOSH director.
 * `client_secret`: *Required.* The password or UAA client secret for the BOSH director.
-* `ca_cert`: *Required.* CA certificate used to validate SSL connections to Director and UAA. If omitted, the director's
+* `ca_cert`: *Optional.* CA certificate used to validate SSL connections to Director and UAA. If omitted, the director's
   certificate must be already trusted.
 * `config`: *Required.* Type of config to update, valid values are: `cloud` and `runtime`
 * `name`: *Optional.* Property for named-configs. If omitted, will default to `default`
