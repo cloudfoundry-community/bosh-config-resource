@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # vim: set ft=sh
 
@@ -10,6 +10,14 @@ exec 1>&2 # redirect all output to stderr for logging
 destination=$1
 
 source $(dirname $0)/common.sh
+
+# target not set, just emit input version, as prolly implicit get after put with source_file
+if [ -z "$(jq -r '.source.target // ""' < $payload)" ]; then
+  jq -r '.version | {version:.}' < $payload >&3
+  exit 0
+fi
+
+setup_bosh_access
 
 if [ -z "$destination" ]; then
   echo "usage: $0 <path/to/destination>" >&2
