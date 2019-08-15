@@ -21,7 +21,8 @@ resource_types:
 ## Source Configuration
 
 * `target`: *Optional.* The address of the BOSH director which will be used for
-  the config.
+  the config. If omitted, `source_file` must be specified via out parameters, as
+  documented below.
 * `client`: *Required.* The username or UAA client ID for the BOSH director.
 * `client_secret`: *Required.* The password or UAA client secret for the BOSH
   director.
@@ -47,6 +48,24 @@ resource_types:
     name: my-named-config
 ```
 
+### Dynamic Source Configuration
+
+Sometimes source configuration cannot be known ahead of time, such as when a BOSH director is created as part of your
+pipeline. In these scenarios, it is helpful to be able to have a dynamic source configuration. In addition to the
+normal parameters for `put`, the following parameters can be provided to redefine the source:
+
+* `source_file`: *Optional.* Path to a file containing a YAML or JSON source
+  config. This allows the target to be determined at runtime, e.g. by acquiring
+  a BOSH lite instance using the
+  [Pool resource](https://github.com/concourse/pool-resource). The content of
+  the `source_file` should have the same structure as the source configuration
+  for the resource itself. The `source_file` will be merged into the exist
+  source configuration.
+
+_Notes_:
+ - `target` must **ONLY** be configured via the `source_file` otherwise the implicit `get` will fail after the `put`.
+ - This is only supported for a `put`.
+
 ## Behaviour
 
 ### `in`: Download most recent config from BOSH director
@@ -67,6 +86,14 @@ manifest.
 
 * `manifest`: *Required.* Path to a BOSH config manifest file.
 * `releases`: Array of paths to bosh releases to upload
+* `source_file`: *Optional.* Path to a file containing a BOSH director address.
+  This allows the target to be determined at runtime, e.g. by acquiring a BOSH
+  lite instance using the [Pool
+  resource](https://github.com/concourse/pool-resource).
+
+  If both `source_file` and `target` are specified, `source_file` takes
+  precedence.
+
 
 ``` yaml
 # Update config
@@ -83,7 +110,7 @@ manifest.
 ## Authors and License
 
 Copyright © 2017-2020, Gwen Ivett, Geoff Franks, Ruben Koster, Konstantin
-Troshin, Konstantin Kiess
+Troshin, Konstantin Kiess, Andrei Krasnitski, Daniel Jones
 
 Copyright © 2022-present, Benjamin Gandon, Gstack
 
