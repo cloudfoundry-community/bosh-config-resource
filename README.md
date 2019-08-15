@@ -85,6 +85,7 @@ manifest.
 #### Parameters
 
 * `manifest`: *Required.* Path to a BOSH config manifest file.
+* `ops_files`: Array of paths to ops files to apply
 * `releases`: Array of paths to bosh releases to upload
 * `source_file`: *Optional.* Path to a file containing a BOSH director address.
   This allows the target to be determined at runtime, e.g. by acquiring a BOSH
@@ -100,6 +101,9 @@ manifest.
 - put: staging
   params:
     manifest: path/to/config-manifest.yml
+    ops_files:
+      - path/to/ops-file.yml
+      - path/to/another-ops-file.yml
     releases:
       - path/to/first/release
       - path/to/second/release

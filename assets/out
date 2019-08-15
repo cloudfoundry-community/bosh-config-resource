@@ -24,7 +24,14 @@ do
 bosh ur "$release"
 done
 
-bosh update-config --type="${config}" --name="${name}" "${manifest}"
+ops_arr=()
+ops_files="$(jq -r '.params.ops_files[] // ""' < "${payload}" | xargs)"
+for ops_file in $ops_files
+do
+ops_arr+=( -o "$ops_file")
+done
+
+bosh update-config --type="${config}" "${ops_arr[@]}" --name="${name}"  "${manifest}"
 
 new_ref="$(calc_reference)"
 
