@@ -31,7 +31,14 @@ do
 ops_arr+=( -o "$ops_file")
 done
 
-bosh update-config --type="${config}" "${ops_arr[@]}" --name="${name}"  "${manifest}"
+vars_arr=()
+vars="$(jq -r '.params.vars | to_entries[] | "\"\(.key)=\(.value)\""' < "${payload}")"
+for var in $vars
+do
+vars_arr+=( -v "$var")
+done
+
+bosh update-config --type="${config}" "${ops_arr[@]}" "${vars_arr[@]}" --name="${name}" "${manifest}"
 
 new_ref="$(calc_reference)"
 
