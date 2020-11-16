@@ -22,8 +22,8 @@ resource_types:
 * `client_secret`: *Required.* The password or UAA client secret for the BOSH director.
 * `ca_cert`: *Required.* CA certificate used to validate SSL connections to Director and UAA. If omitted, the director's
   certificate must be already trusted.
-* `config`: *Required.* Type of config to update, valid values are: `cloud` and `runtime`
-* `name`: *Optional.* Property for named-configs. If omitted, will default to `default`
+* `config`: *Required.* Type of config to update.
+* `name`: *Optional.* Property for named-configs. If omitted, will default to `default`.
 
 
 ### Example
