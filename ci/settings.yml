@@ -1,27 +1,263 @@
 ---
 # settings for the bosh-config-resource pipeline
 meta:
-  target: ohio-cf
-  url:    https://ci2.starkandwayne.com
-  name:   bosh-config-resource
+  name:    bosh-config-resource
+  release: BOSH-Config Concourse resource
+  target:  gk-plat-devs
+  url:     https://ci.gstack.io
 
-  initial_version: 0.0.1
+  initial_version: "1.0.0"
 
-  aws:
-    access_key: ((aws-cfcommunity-access))
-    secret_key: ((aws-cfcommunity-secret))
+  git:
+    email:  ((git-commit-email))
+    name:   ((git-commit-name))
+
+  image:
+    name: (( concat meta.private-registry.host "/gstack/gk-ops" ))
+    registry:
+      username: (( grab meta.private-registry.username ))
+      password: (( grab meta.private-registry.password ))
 
   dockerhub:
-    username: ((docker-hub-username))
-    password: ((docker-hub-password))
-    repository: cfcommunity/bosh-config-resource
+    username:   ((dockerhub-username))
+    password:   ((dockerhub-password))
+    org:        cfcommunity
+    repository: (( concat meta.dockerhub.org "/" meta.name ))
+    short_desc:
+      A Concourse resource that deals with cloud configs or runtime configs
+      that live in some BOSH director
+
+  private-registry:
+    host:       harbor.ci.gstack.io
+    username:   ((private-registry-username))
+    password:   ((private-registry-password))
+    repository: (( concat meta.private-registry.host "/" meta.dockerhub.org "/" meta.name ))
+
+  aws:
+    bucket:      (( grab meta.pipeline ))
+    region_name: eu-west-3
+    access_key:  ((aws-access-key))
+    secret_key:  ((aws-secret-key))
 
   github:
-    owner: cloudfoundry-community
-    repo:  bosh-config-resource
+    owner:        cloudfoundry-community
+    repo:         bosh-config-resource
+    branch:       master
     private_key:  ((github-private-key))
     access_token: ((github-access-token))
 
   slack:
-    webhook: ((slack-webhook))
-    channel: '#botspam'
+    webhook:       ((slack-webhook))
+    username:      ((slack-username))
+    icon:          ((slack-icon-url))
+    channel:       "#oss-pipelines-notifications"
+
+groups:
+  - name: (( grab meta.name ))
+    jobs:
+      - (( append ))
+      - test
+
+jobs:
+  - name: test
+    serial: true
+    plan:
+      - in_parallel:
+          - { get: edge, passed: [ build ], trigger: true }
+          - { get: git,  passed: [ build ], trigger: true }
+      - task: test-image
+        image: edge
+        config:
+          platform: linux
+          inputs:
+            - name: git
+          run:
+            path: bash
+            args:
+              - -c
+              - |
+                set -ueo pipefail -x
+
+                failure="false"
+
+                out_dir=/tmp/mocked-bosh-cli
+
+                mv /usr/bin/bosh /usr/bin/bosh.bak
+                touch /usr/bin/bosh
+                chmod +x /usr/bin/bosh
+                cat > /usr/bin/bosh <<EOF
+                #!/bin/bash
+                mkdir -p "${out_dir}"
+                echo bosh "$@" > "${out_dir}/last-invocation-args"
+                env | grep "^BOSH_" > "${out_dir}/last-invocation-env"
+                if [[ $1 != config || $1 != update-config ]]; then
+                    echo >&2 "Unsupported 'bosh $1' verb in this mock script"
+                    exit 1
+                fi
+                if [[ $1 == config ]]; then
+                    echo "--- { plip: plop }"
+                fi
+                exit 0
+                EOF
+
+                latest_ref_json=$(
+                    jq --null-input \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "ca_cert"       "---cert---" \
+                        --arg "config"        "cloud" \
+                        --arg "name"          "plop" \
+                        '{ "source": {
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "ca_cert":       $ca_cert,
+                              "config":        $config
+                            } }' \
+                    | /opt/resource/check
+                )
+                latest_ref=$(jq --raw-output '.[0].ref' <<< "${latest_ref_json}")
+
+                if [[ $(< "${out_dir}/last-invocation-args")
+                        != "bosh config --type=cloud --name=plop" ]]
+                then
+                    >&2 echo "FAIL: expected 'bosh config --type=cloud --name=plop' invocation, but got:"
+                    cat "${out_dir}/last-invocation-args"
+                    failure="true"
+                fi
+                if [[ ${latest_ref} != f7ef4d2de3c74ab6fb2ffc4f2f7dba9e7cd18fcf ]]
+                then
+                    >&2 echo "FAIL: expected ref 'f7ef4d2de3c74ab6fb2ffc4f2f7dba9e7cd18fcf'," \
+                        "but got: '${latest_ref}'"
+                    failure="true"
+                fi
+                if [[ $(awk -F= '/^BOSH_CLIENT_SECRET=/{print $2}')
+                        != "plop-plop" ]]
+                then
+                    >&2 echo "FAIL: expected client secret 'plop-plop'," \
+                        "but got: '${latest_ref}'. Detailed environment:"
+                    cat "${out_dir}/last-invocation-env"
+                    failure="true"
+                fi
+
+
+
+                mkdir -p "artifact"
+                jq --null-input \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "ca_cert"       "---cert---" \
+                        --arg "config"        "cloud" \
+                        --arg "name"          "plop" \
+                        '{ "source": {
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "ca_cert":       $ca_cert,
+                              "config":        $config
+                            } }' \
+                    | /opt/resource/in "artifact"
+
+                if [[ $(< "${out_dir}/last-invocation-args")
+                        != "bosh config --type=cloud --name=plop" ]]
+                then
+                    >&2 echo "FAIL: expected 'bosh config --type=cloud --name=plop' invocation, but got:"
+                    cat "${out_dir}/last-invocation-args"
+                    failure="true"
+                fi
+                if [[ $(< "artifact/cloud-config.yml")
+                        != "--- { plip: plop }" ]]
+                then
+                    >&2 echo "FAIL: expected '--- { plip: plop }' content, but got:"
+                    cat "artifact/cloud-config.yml"
+                    failure="true"
+                fi
+
+
+
+                if [[ ${failure} == true ]]; then
+                    exit 1
+                fi
+                exit 0
+
+        on_failure:
+          put: notify
+          params:
+            channel:  (( grab meta.slack.channel ))
+            username: (( grab meta.slack.username ))
+            icon_url: (( grab meta.slack.icon ))
+            text:     (( grab meta.slack.fail_text ))
+
+  - name: pre
+    plan:
+      - (( inline ))
+      - in_parallel:
+          - (( merge on get ))
+          - { get: edge, passed: [ (( replace )), test ] }
+          - { get: git,  passed: [ (( replace )), test ] }
+
+  - name: promote
+    plan:
+      - (( insert after 1 )) # insert after “task: release”
+      - task: append-usage
+        image: image
+        config:
+          platform: linux
+          inputs:  [ name: gh, name: version ]
+          outputs: [ name: gh ]
+          run:
+            path: bash
+            args:
+              - -c
+              - |
+                set -ueo pipefail
+                cat >> gh/notes.md <<EOF
+
+                ### Usage
+
+                \`\`\`yaml
+                resource_types:
+                  - name: bosh-config
+                    type: registry-image
+                    source:
+                      repository: ${DOCKERHUB_REPOSITORY}
+                      tag: "$(< version/number)"
+                \`\`\`
+                EOF
+        params:
+          DOCKERHUB_REPOSITORY: (( concat meta.dockerhub.org "/" meta.name ))
+
+resources:
+
+  - name: git
+    check_every: 24h
+    webhook_token: ((concourse-webhook-token))
+
+  - name: git-pull-requests
+    check_every: 24h
+    webhook_token: ((concourse-webhook-token))
+
+  - name: edge
+    source:
+      username:   (( grab meta.private-registry.username ))
+      password:   (( grab meta.private-registry.password ))
+      repository: (( grab meta.private-registry.repository ))
+
+  - name: latest
+    source:
+      username:   (( grab meta.private-registry.username ))
+      password:   (( grab meta.private-registry.password ))
+      repository: (( grab meta.private-registry.repository ))
+
+  - name: version
+    icon: github
+    source:
+      bucket:            (( prune ))
+      region_name:       (( prune ))
+      key:               (( prune ))
+      access_key_id:     (( prune ))
+      secret_access_key: (( prune ))
+      driver:      git
+      uri:         git@github.com:gstackio/gk-pipelines-compass.git
+      branch:      master
+      file:        (( concat "versions/" meta.pipeline ))
+      private_key: ((github-private-key))
+      git_user:    "((git-commit-name)) <((git-commit-email))>"

@@ -11,6 +11,9 @@
 
 set -eu
 
+: ${GIT_EMAIL:?required}
+: ${GIT_NAME:?required}
+
 if [[ ! -f ${REPO_ROOT}/ci/release_notes.md ]]; then
   echo >&2 "ci/release_notes.md not found.  Did you forget to write them?"
   exit 1
@@ -36,10 +39,10 @@ mv ${REPO_ROOT}/ci/release_notes.md   ${RELEASE_ROOT}/notes.md
 
 # GIT!
 if [[ -z $(git config --global user.email) ]]; then
-  git config --global user.email "ci@starkandwayne.com"
+  git config --global user.email "${GIT_EMAIL}"
 fi
 if [[ -z $(git config --global user.name) ]]; then
-  git config --global user.name "CI Bot"
+  git config --global user.name "${GIT_NAME}"
 fi
 
 (cd ${REPO_ROOT}
@@ -50,3 +53,7 @@ fi
 
 # so that future steps in the pipeline can push our changes
 cp -a ${REPO_ROOT} ${REPO_OUT}
+
+sed -e '/START_OF_DOCKERHUB_STRIP/,/END_OF_DOCKERHUB_STRIP/d' \
+  git/README.md \
+  > dockerhub/README.md
