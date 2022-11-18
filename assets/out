@@ -12,8 +12,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 setup_bosh_access
 
 manifest=$(jq --raw-output '.params.manifest // ""' < "${payload}")
-if [[ -z ${manifest} ]]; then
-    echo >&2 "invalid payload (missing params.manifest):"
+manifests=$(jq --compact-output '.params.manifests // {}' < "${payload}")
+if [[ -z ${manifest} && -z ${manifests} ]]; then
+    echo >&2 "invalid payload (missing params.manifest or params.manifests):"
     cat "${payload}" >&2
     exit 1
 fi
@@ -21,6 +22,7 @@ fi
 old_IFS="${IFS}"
 IFS=$'\n'
 
+manifests=($(jq --compact-output '(.params.manifests // {}) | to_entries[]' < "${payload}"))
 releases=($(jq --raw-output '(.params.releases // []) | .[]' < "${payload}"))
 ops_files=($(jq --raw-output '(.params.ops_files // []) | .[]' < "${payload}"))
 vars=($(jq --raw-output '(.params.vars // {}) | to_entries[] | "\(.key)=\(.value)"' < "${payload}"))
@@ -41,7 +43,36 @@ for var in "${vars[@]}"; do
     vars_args+=("--var=${var}")
 done
 
-bosh update-config --type="${config}" --name="${name}" "${ops_args[@]}" "${vars_args[@]}" "${manifest}"
+if [[ ${all_configs} == "false" ]]; then
+    bosh update-config --type="${config}" --name="${name}" \
+        "${ops_args[@]}" "${vars_args[@]}" "${manifest}"
+else
+    for manifest_json in "${manifests[@]}"; do
+        name=$(jq --raw-output '.key'   <<< "${manifest_json}")
+        file=$(jq --raw-output '.value' <<< "${manifest_json}")
+        if [[ ${#includes[@]} -eq 0 ]]; then
+            is_included="true"
+        else
+            is_included="false"
+            for incl in "${includes[@]}"; do
+                if [[ ${name} == ${incl} ]]; then
+                    is_included="true"
+                    break
+                fi
+            done
+        fi
+        for excl in "${excludes[@]}"; do
+            if [[ ${name} == ${excl} ]]; then
+                is_included="false"
+                break
+            fi
+        done
+        if [[ ${is_included} == "true" ]]; then
+            bosh update-config --type="${config}" --name="${name}" \
+                "${ops_args[@]}" "${vars_args[@]}" "${file}"
+        fi
+    done
+fi
 
 new_ref="$(calc_reference)"
 

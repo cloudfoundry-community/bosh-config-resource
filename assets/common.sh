@@ -26,9 +26,21 @@ function set_and_validate_vars() {
     ca_cert=$(      jq --raw-output '.source.ca_cert       // ""' < "${payload}")
     config=$(       jq --raw-output '.source.config        // ""' < "${payload}")
     name=$(         jq --raw-output '.source.name          // ""' < "${payload}")
+    all_configs=$(jq --raw-output 'if .source.all then true else false end' < "${payload}")
 
-    if [[ -z ${name} ]]; then
+    local old_IFS="${IFS}"
+    IFS=$'\n'
+    includes=($(jq --raw-output '(.source.includes // []) | .[]' < "${payload}"))
+    excludes=($(jq --raw-output '(.source.excludes // []) | .[]' < "${payload}"))
+    IFS="${old_IFS}"
+
+    if [[ ${all_configs} == "false" && -z ${name} ]]; then
         name="default"
+    fi
+    if [[ ${all_configs} == "true" && -n ${name} ]]; then
+        echo >&2 "invalid payload (illegal source.name when source.all is true):"
+        cat "${payload}" >&2
+        exit 1
     fi
 
     if [[ -z ${target} ]]; then
@@ -67,7 +79,40 @@ function export_bosh_vars() {
 }
 
 function calc_reference() {
-    bosh config --type="${config}" --name="${name}" \
+    if [[ ${all_configs} == "false" ]]; then
+        bosh config --type="${config}" --name="${name}"
+    else
+        local config_names  name  excl  is_included  incl
+        local old_IFS="${IFS}"
+        IFS=$'\n'
+        config_names=( $(bosh configs --json \
+            | jq --raw-output \
+                --arg "type" "${config}" \
+                '.Tables[0].Rows[] | select(.type == $type) | .name') )
+        IFS="${old_IFS}"
+        for name in "${config_names[@]}"; do
+            if [[ ${#includes[@]} -eq 0 ]]; then
+                is_included="true"
+            else
+                is_included="false"
+                for incl in "${includes[@]}"; do
+                    if [[ ${name} == ${incl} ]]; then
+                        is_included="true"
+                        break
+                    fi
+                done
+            fi
+            for excl in "${excludes[@]}"; do
+                if [[ ${name} == ${excl} ]]; then
+                    is_included="false"
+                    break
+                fi
+            done
+            if [[ ${is_included} == "true" ]]; then
+                bosh config --type="${config}" --name="${name}"
+            fi
+        done
+    fi \
         | sha1sum \
         | cut --delimiter=" " --field="1"
 }

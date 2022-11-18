@@ -129,18 +129,51 @@ jobs:
                 #!/bin/bash
                 out_dir=/tmp/mocked-bosh-cli
                 mkdir -p "${out_dir}"
-                if [[ ! -f "${out_dir}/first-invocation-args" ]]; then
-                    echo bosh "$@" > "${out_dir}/first-invocation-args"
-                fi
-                echo bosh "$@" > "${out_dir}/last-invocation-args"
-                env | grep "^BOSH_" > "${out_dir}/last-invocation-env"
-                if [[ $1 != config && $1 != update-config && $1 != upload-release ]]; then
-                    echo >&2 "Unsupported 'bosh $1' verb in this mock script"
-                    exit 1
-                fi
-                if [[ $1 == config ]]; then
-                    echo "--- { plip: plop }"
-                fi
+                [[ ! -f ${out_dir}/calls_count ]] && echo "0" > "${out_dir}/calls_count"
+
+                calls_count=$(( $(< ${out_dir}/calls_count) + 1 ))
+                echo "${calls_count}" > "${out_dir}/calls_count"
+                out_prefix=$(printf "%03d" "${calls_count}")
+                ln -sfn "${out_prefix}-invocation-args" "${out_dir}/last-invocation-args"
+                ln -sfn "${out_prefix}-invocation-env"  "${out_dir}/last-invocation-env"
+                out_prefix="${out_dir}/${out_prefix}"
+                echo bosh "$@" > "${out_prefix}-invocation-args"
+                env | grep "^BOSH_" > "${out_prefix}-invocation-env"
+
+                verb="$1"; shift
+                ops_files=()
+                vars=()
+                file_args=()
+                while [[ $# -gt 0 ]]; do
+                    case "$1" in
+                        --json)       json="true" ;;
+                        --type=*)     type="${1#--type=}" ;;
+                        --name=*)     name="${1#--name=}" ;;
+                        --ops-file=*) ops_files+=("${1#--ops-file=}") ;;
+                        --var=*)      vars+=("${1#--var=}") ;;
+                        *)            file_args+=("$1") ;;
+                    esac
+                    shift
+                done
+                case "${verb}" in
+                    configs)
+                        if [[ -n ${json} ]]; then
+                            echo '{ "Tables": [ { "Rows": [
+                              { "type": "cloud",   "name": "default" },
+                              { "type": "cloud",   "name": "plip" },
+                              { "type": "runtime", "name": "default" },
+                              { "type": "runtime", "name": "plip" },
+                              { "type": "runtime", "name": "plop" }
+                            ] } ] }'
+                        fi ;;
+                    config)
+                        echo "--- { type: '${type}', name: '${name}' }" ;;
+                    update-config) : ;;
+                    upload-release) : ;;
+                    *)
+                      echo >&2 "Unsupported 'bosh ${verb}' verb in this mock script"
+                      exit 1
+                esac
                 exit 0
                 EOF
 
@@ -151,7 +184,7 @@ jobs:
                         --arg "client_secret" "plop-plop" \
                         --arg "ca_cert"       "---cert---" \
                         --arg "config"        "cloud" \
-                        --arg "name"          "plop" \
+                        --arg "name"          "plip" \
                         '{ "source": {
                               "target":        $target,
                               "client":        $client,
@@ -165,17 +198,26 @@ jobs:
                 latest_ref=$(jq --raw-output '.[0].ref' <<< "${latest_ref_json}")
 
                 if [[ $(< "${out_dir}/last-invocation-args") \
-                        != "bosh config --type=cloud --name=plop" ]]
+                        != "bosh config --type=cloud --name=plip" ]]
                 then
-                    >&2 echo "FAIL: expected 'bosh config --type=cloud --name=plop' invocation, but got:"
-                    cat "${out_dir}/last-invocation-args"
+                    >&2 echo "FAIL: expected 'bosh config --type=cloud --name=plip' invocation, but got:"
+                    >&2 cat "${out_dir}/last-invocation-args"
                     failure="true"
                 fi
-                expected_ref="f7ef4d2de3c74ab6fb2ffc4f2f7dba9e7cd18fcf"
+                # expected_ref computation: echo "--- { type: 'cloud', name: 'plip' }" | shasum -a 1
+                expected_ref="4c138fbadfd65c62ad1034a7eaff1b0e1866c719"
                 if [[ ${latest_ref} != ${expected_ref} ]]
                 then
                     >&2 echo "FAIL: expected ref '${expected_ref}'," \
                         "but got: '${latest_ref}'"
+                    failure="true"
+                fi
+                actual_target=$(awk -F= '/^BOSH_ENVIRONMENT=/{print $2}' "${out_dir}/last-invocation-env")
+                if [[ ${actual_target} != "plaf" ]]
+                then
+                    >&2 echo "FAIL: expected target 'plaf'," \
+                        "but got: '${actual_target}'. Detailed environment:"
+                    >&2 cat "${out_dir}/last-invocation-env"
                     failure="true"
                 fi
                 actual_client=$(awk -F= '/^BOSH_CLIENT=/{print $2}' "${out_dir}/last-invocation-env")
@@ -183,7 +225,7 @@ jobs:
                 then
                     >&2 echo "FAIL: expected client 'plip'," \
                         "but got: '${actual_client}'. Detailed environment:"
-                    cat "${out_dir}/last-invocation-env"
+                    >&2 cat "${out_dir}/last-invocation-env"
                     failure="true"
                 fi
                 actual_client_secret=$(awk -F= '/^BOSH_CLIENT_SECRET=/{print $2}' "${out_dir}/last-invocation-env")
@@ -191,7 +233,7 @@ jobs:
                 then
                     >&2 echo "FAIL: expected client secret 'plop-plop'," \
                         "but got: '${actual_client_secret}'. Detailed environment:"
-                    cat "${out_dir}/last-invocation-env"
+                    >&2 cat "${out_dir}/last-invocation-env"
                     failure="true"
                 fi
                 actual_ca_cert=$(awk -F= '/^BOSH_CA_CERT=/{print $2}' "${out_dir}/last-invocation-env")
@@ -199,10 +241,10 @@ jobs:
                 then
                     >&2 echo "FAIL: expected client secret '---cert---'," \
                         "but got: '${actual_ca_cert}'. Detailed environment:"
-                    cat "${out_dir}/last-invocation-env"
+                    >&2 cat "${out_dir}/last-invocation-env"
                     failure="true"
                 fi
-                rm "${out_dir}"/*
+                rm -f "${out_dir?missing}"/*
 
 
 
@@ -213,7 +255,7 @@ jobs:
                         --arg "client"        "plip" \
                         --arg "client_secret" "plop-plop" \
                         --arg "config"        "cloud" \
-                        --arg "name"          "plop" \
+                        --arg "name"          "plip" \
                         --arg "ref"           "${latest_ref}" \
                         '{ "source": {
                               "target":        $target,
@@ -227,16 +269,16 @@ jobs:
                     | /opt/resource/in "artifact"
                 )
                 if [[ $(< "${out_dir}/last-invocation-args") \
-                        != "bosh config --type=cloud --name=plop" ]]
+                        != "bosh config --type=cloud --name=plip" ]]
                 then
-                    >&2 echo "FAIL: expected 'bosh config --type=cloud --name=plop' invocation, but got:"
-                    cat "${out_dir}/last-invocation-args"
+                    >&2 echo "FAIL: expected 'bosh config --type=cloud --name=plip' invocation, but got:"
+                    >&2 cat "${out_dir}/last-invocation-args"
                     failure="true"
                 fi
-                if [[ $(< "artifact/cloud-config.yml") != "--- { plip: plop }" ]]
+                if [[ $(< "artifact/cloud-config.yml") != "--- { type: 'cloud', name: 'plip' }" ]]
                 then
-                    >&2 echo "FAIL: expected '--- { plip: plop }' content, but got:"
-                    cat "artifact/cloud-config.yml"
+                    >&2 echo "FAIL: expected '--- { type: 'cloud', name: 'plip' }' content, but got:"
+                    >&2 cat "artifact/cloud-config.yml"
                     failure="true"
                 fi
                 actual_ref=$(jq --raw-output '.version.ref' <<< "${pulled_config_json}")
@@ -245,10 +287,202 @@ jobs:
                     >&2 echo "FAIL: expected '${expected_ref}' ref, but got: '${actual_ref}'"
                     failure="true"
                 fi
-                rm "${out_dir}"/*
+                rm -f artifact/*
+                rm -f "${out_dir?missing}"/*
 
 
 
+                latest_ref_json=$(
+                    jq --null-input \
+                        --arg "target"        "plaf" \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "config"        "cloud" \
+                        --argjson "all"       "true" \
+                        --argjson "excludes"  '[ "abolutely-none" ]' \
+                        '{ "source": {
+                              "target":        $target,
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "config":        $config,
+                              "all":           $all,
+                              "excludes":      $excludes
+                            } }' \
+                    | /opt/resource/check
+                )
+                latest_ref=$(jq --raw-output '.[0].ref' <<< "${latest_ref_json}")
+                rm -f "${out_dir?missing}"/*
+
+                pulled_configs_json=$(
+                    jq --null-input \
+                        --arg "target"        "plaf" \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "config"        "cloud" \
+                        --argjson "all"       "true" \
+                        --arg "ref"           "${latest_ref}" \
+                        --argjson "excludes"  '[ "abolutely-none" ]' \
+                        '{ "source": {
+                              "target":        $target,
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "config":        $config,
+                              "all":           $all,
+                              "excludes":      $excludes
+                            },
+                            "version": { "ref": $ref },
+                          }' \
+                    | /opt/resource/in "artifact"
+                )
+                for name in {default,plip}; do
+                    if [[ ! -f "artifact/${name}-cloud-config.yml" ]]; then
+                        >&2 echo "FAIL: missing 'artifact/${name}-cloud-config.yml' file" \
+                            "from output artifact directory. Containing:"
+                        >&2 ls -la "artifact"
+                        failure="true"
+                    fi
+                done
+                # expected_ref computation: for name in {default,plip}; do echo "--- { type: 'cloud', name: '${name}' }"; done | shasum -a 1
+                expected_ref="d57d4a1f92039547b3ee7e45e2ce13063579a66d"
+                actual_ref=$(jq --raw-output '.version.ref' <<< "${pulled_configs_json}")
+                if [[ ${actual_ref} != ${expected_ref} ]]
+                then
+                    >&2 echo "FAIL: expected '${expected_ref}' ref, but got: '${actual_ref}'"
+                    failure="true"
+                fi
+                rm -f artifact/*
+                rm -f "${out_dir?missing}"/*
+
+
+
+                latest_ref_json=$(
+                    jq --null-input \
+                        --arg "target"        "plaf" \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "config"        "runtime" \
+                        --argjson "all"       "true" \
+                        --argjson "excludes"  '[ "plop" ]' \
+                        '{ "source": {
+                              "target":        $target,
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "config":        $config,
+                              "all":           $all,
+                              "excludes":      $excludes
+                            } }' \
+                    | /opt/resource/check
+                )
+                latest_ref=$(jq --raw-output '.[0].ref' <<< "${latest_ref_json}")
+                rm -f "${out_dir?missing}"/*
+
+                pulled_configs_json=$(
+                    jq --null-input \
+                        --arg "target"        "plaf" \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "config"        "runtime" \
+                        --argjson "all"       "true" \
+                        --argjson "excludes"  '[ "plop" ]' \
+                        --arg "ref"           "${latest_ref}" \
+                        '{ "source": {
+                              "target":        $target,
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "config":        $config,
+                              "all":           $all,
+                              "excludes":      $excludes
+                            },
+                            "version": { "ref": $ref },
+                          }' \
+                    | /opt/resource/in "artifact"
+                )
+                for name in {default,plip}; do
+                    if [[ ! -f "artifact/${name}-runtime-config.yml" ]]; then
+                        >&2 echo "FAIL: missing 'artifact/${name}-runtime-config.yml' file" \
+                            "from output artifact directory. Containing:"
+                        >&2 ls -la "artifact"
+                        failure="true"
+                    fi
+                done
+                # expected_ref computation: for name in {default,plip}; do echo "--- { type: 'runtime', name: '${name}' }"; done | shasum -a 1
+                expected_ref="ba091d28b485f4e144b3cf106abde5e87a82bcd6"
+                actual_ref=$(jq --raw-output '.version.ref' <<< "${pulled_configs_json}")
+                if [[ ${actual_ref} != ${expected_ref} ]]
+                then
+                    >&2 echo "FAIL: expected '${expected_ref}' ref, but got: '${actual_ref}'"
+                    failure="true"
+                fi
+                rm -f artifact/*
+                rm -f "${out_dir?missing}"/*
+
+
+
+                latest_ref_json=$(
+                    jq --null-input \
+                        --arg "target"        "plaf" \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "config"        "runtime" \
+                        --argjson "all"       "true" \
+                        --argjson "includes"  '[ "plip", "default" ]' \
+                        '{ "source": {
+                              "target":        $target,
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "config":        $config,
+                              "all":           $all,
+                              "includes":      $includes
+                            } }' \
+                    | /opt/resource/check
+                )
+                latest_ref=$(jq --raw-output '.[0].ref' <<< "${latest_ref_json}")
+                rm -f "${out_dir?missing}"/*
+
+                pulled_configs_json=$(
+                    jq --null-input \
+                        --arg "target"        "plaf" \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "config"        "runtime" \
+                        --argjson "all"       "true" \
+                        --argjson "includes"  '[ "plip", "default" ]' \
+                        --arg "ref"           "${latest_ref}" \
+                        '{ "source": {
+                              "target":        $target,
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "config":        $config,
+                              "all":           $all,
+                              "includes":      $includes
+                            },
+                            "version": { "ref": $ref },
+                          }' \
+                    | /opt/resource/in "artifact"
+                )
+                for name in {default,plip}; do
+                    if [[ ! -f "artifact/${name}-runtime-config.yml" ]]; then
+                        >&2 echo "FAIL: missing 'artifact/${name}-runtime-config.yml' file" \
+                            "from output artifact directory. Containing:"
+                        >&2 ls -la "artifact"
+                        failure="true"
+                    fi
+                done
+                # expected_ref computation: for name in {default,plip}; do echo "--- { type: 'runtime', name: '${name}' }"; done | shasum -a 1
+                expected_ref="ba091d28b485f4e144b3cf106abde5e87a82bcd6"
+                actual_ref=$(jq --raw-output '.version.ref' <<< "${pulled_configs_json}")
+                if [[ ${actual_ref} != ${expected_ref} ]]
+                then
+                    >&2 echo "FAIL: expected '${expected_ref}' ref, but got: '${actual_ref}'"
+                    failure="true"
+                fi
+                rm -f artifact/*
+                rm -f "${out_dir?missing}"/*
+
+
+
+                echo "--- { type: 'cloud', name: 'plop' }" \
+                    > "artifact/plop-cloud-cfg.yml"
                 pushed_config_json=$(
                     jq --null-input \
                         --arg "target"        "plaf" \
@@ -275,19 +509,76 @@ jobs:
                     | /opt/resource/out "artifact"
                 )
                 expected_invocation="bosh update-config --type=cloud --name=plop --ops-file=an-ops-file.yml --var=some_var=some-value cloud-config.yml"
-                if [[ $(< "${out_dir}/first-invocation-args") \
+                if [[ $(< "${out_dir}/001-invocation-args") \
                         != ${expected_invocation} ]]
                 then
                     >&2 echo "FAIL: expected '${expected_invocation}' invocation, but got:"
-                    cat "${out_dir}/first-invocation-args"
+                    >&2 cat "${out_dir}/001-invocation-args"
                     failure="true"
                 fi
+                # expected_ref computation: echo "--- { type: 'cloud', name: 'plop' }" | sha1sum
+                expected_ref="c8648c3e6ce5946af81293c5768d5e0cefde69b6"
                 actual_ref=$(jq --raw-output '.version.ref' <<< "${pushed_config_json}")
                 if [[ ${actual_ref} != ${expected_ref} ]]
                 then
                     >&2 echo "FAIL: expected '${expected_ref}' ref, but got: '${actual_ref}'"
                     failure="true"
                 fi
+                rm -f artifact/*
+                rm -f "${out_dir?missing}"/*
+
+
+
+                for name in {default,plip}; do
+                    echo "--- { type: 'runtime', name: '${name}' }" \
+                        > "artifact/${name}-runtime-cfg.yml"
+                done
+                pushed_configs_json=$(
+                    jq --null-input \
+                        --arg "target"        "plaf" \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "config"        "runtime" \
+                        --argjson "all"       "true" \
+                        --argjson "manifests" \
+                            '{
+                              "default": "default-runtime-cfg.yml",
+                              "plip":    "plip-runtime-cfg.yml"
+                            }' \
+                        --arg "ops_file"      "an-ops-file.yml" \
+                        --arg "some_var"      "some-value" \
+                        '{ "source": {
+                              "target":        $target,
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "config":        $config,
+                              "all":           $all
+                            },
+                            "params": {
+                              "manifests": $manifests,
+                              "ops_files": [ $ops_file ],
+                              "vars": { "some_var": $some_var }
+                            }
+                          }' \
+                    | /opt/resource/out "artifact"
+                )
+                expected_invocation="bosh update-config --type=runtime --name=default --ops-file=an-ops-file.yml --var=some_var=some-value default-runtime-cfg.yml"
+                if [[ $(< "${out_dir}/001-invocation-args") \
+                        != ${expected_invocation} ]]
+                then
+                    >&2 echo "FAIL: expected '${expected_invocation}' invocation, but got:"
+                    >&2 cat "${out_dir}/001-invocation-args"
+                    failure="true"
+                fi
+                expected_invocation="bosh update-config --type=runtime --name=plip --ops-file=an-ops-file.yml --var=some_var=some-value plip-runtime-cfg.yml"
+                if [[ $(< "${out_dir}/002-invocation-args") \
+                        != ${expected_invocation} ]]
+                then
+                    >&2 echo "FAIL: expected '${expected_invocation}' invocation, but got:"
+                    >&2 cat "${out_dir}/002-invocation-args"
+                    failure="true"
+                fi
+                rm -f "${out_dir?missing}"/*
 
 
 

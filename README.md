@@ -30,8 +30,17 @@ resource_types:
   Director and UAA. If omitted, the director's certificate must be already
   trusted.
 * `config`: *Required.* Type of config to update.
-* `name`: *Optional.* Property for named-configs. If omitted, will default to
-  `default`.
+* `name`: *Optional.* Property for named-configs. Illegal when `all` is `true`.
+  If omitted when `all` is `false`, it will default to `default`, which is the
+  usual name of default BOSH configs.
+* `all`: *Optional.* Set to `true` when in need for `check` to watch at changes
+  on _all_ configs of the type spcified with `config`. Defaults to `false`.
+* `includes`: *Optional.* An allow-list of config names. When `all` is set to
+  `true`, an array of config names to include. If not empty, any config name
+  that is not in this array is not considered.
+* `excludes`: *Optional.* A deny-list list of config names. When `all` is set to
+  `true`, an array of config names to exclude. Any config name that is in this
+  array is not considered.
 
 
 ### Example
@@ -72,19 +81,36 @@ _Notes_:
 
 This will download the config manifest. It will place two files in the target directory:
 
-- `{cloud,runtime}-config.yml`: The config manifest
-- `version`: The sha1 of the config manifest
+- When `source.all` is `false`
+  - `{cloud,runtime}-config.yml`: The config manifest
+  - `version`: The sha1 of the config manifest
+- When `source.all` is `true`
+  - `<name>-{cloud,runtime}-config.yml`: The config manifest named `<name>`
+  - `version`: The sha1 of the concatenated config manifests
 
-_Note_: Only the most recent version is fetchable
+_Note_: Only the most recent version of configs is fetchable
 
 ### `out`: Update config on BOSH director
 
-This will upload any given releases, and update the config with the specified
-manifest.
+This will upload any given releases, and update the config(s) with the specified
+manifest(s).
+
+When `source.all` is `false` the config with the type defined in `source.config`
+and name defined by `source.name` is updated. Any `params.ops_files` are
+applied, and any `params.vars` are interpolated.
+
+When `source.all` is `true`, then the configs defined in `params.manifests`,
+with given name (key) and manifest file (value), are updated. Theses must all be
+of the type defined in `source.config`. The `params.ops_files` and `params.vars`
+do apply to _all_ of them. `source.includes` and `source.excludes` apply to the
+names defined in the keys of the `params.manifests` dictionary.
 
 #### Parameters
 
-* `manifest`: *Required.* Path to a BOSH config manifest file.
+* `manifest`: *Required when `all` is `false`.* Path to a BOSH config manifest
+  file.
+* `manifests`: *Required when `all` is `true`.* Dictionary of config names
+  (keys) and paths to their respective manifest files (values).
 * `ops_files`: *Optional.* Array of paths to ops files to apply.
 * `vars`: *Optional.* Dictionary of variables to apply.
 * `releases`: *Optional.* Array of paths to bosh releases to upload.
