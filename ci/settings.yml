@@ -114,6 +114,12 @@ jobs:
 
                 failure="false"
 
+                if [[ $(bosh --version) != "version "* ]]; then
+                    >&2 echo "FAIL: expected 'bosh --version' to work, but got:"
+                    (bosh --version | cat) || true
+                    failure="true"
+                fi
+
                 out_dir=/tmp/mocked-bosh-cli
 
                 mv /usr/bin/bosh /usr/bin/bosh.bak
