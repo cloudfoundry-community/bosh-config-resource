@@ -65,12 +65,14 @@ jobs:
       - in_parallel:
           - (( append ))
           - { get: alpine-latest, trigger: true, params: { format: oci } }
+          - { get: bosh-cli,      trigger: true, params: { globs: [ "*-linux-*" ] } }
 
       - # task: build-docker-image
         config:
           inputs:
             - (( append ))
             - name: alpine-latest
+            - name: bosh-cli
         params:
           IMAGE_ARG_alpine: alpine-latest/image.tar
 
@@ -306,3 +308,12 @@ resources:
     source:
       repository: alpine
       tag:        latest
+
+  - name: bosh-cli
+    type: github-release
+    icon: github
+    check_every: 24h
+    source:
+      user: cloudfoundry
+      repository: bosh-cli
+      access_token: (( grab meta.github.access_token ))
