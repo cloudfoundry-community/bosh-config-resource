@@ -1,4 +1,4 @@
-FROM gliderlabs/alpine:3.3
+FROM alpine:latest
 
 ENV BOSH_VERSION=5.4.0
 

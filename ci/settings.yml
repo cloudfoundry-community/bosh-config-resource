@@ -59,6 +59,38 @@ groups:
       - test
 
 jobs:
+  - name: build
+    plan:
+      - (( inline ))
+      - in_parallel:
+          - (( append ))
+          - { get: alpine-latest, trigger: true, params: { format: oci } }
+
+      - # task: build-docker-image
+        config:
+          inputs:
+            - (( append ))
+            - name: alpine-latest
+        params:
+          IMAGE_ARG_alpine: alpine-latest/image.tar
+
+  - name: build-pr
+    plan:
+      - (( inline ))
+      - in_parallel:
+          - (( append ))
+          - { get: alpine-latest, trigger: true, params: { format: oci } }
+
+      - {} # put: git-pull-requests
+
+      - # task: build-docker-image
+        config:
+          inputs:
+            - (( append ))
+            - name: alpine-latest
+        params:
+          IMAGE_ARG_alpine: alpine-latest/image.tar
+
   - name: test
     serial: true
     plan:
@@ -261,3 +293,11 @@ resources:
       file:        (( concat "versions/" meta.pipeline ))
       private_key: ((github-private-key))
       git_user:    "((git-commit-name)) <((git-commit-email))>"
+
+  - name: alpine-latest
+    type: registry-image
+    icon: docker
+    check_every: 24h
+    source:
+      repository: alpine
+      tag:        latest
