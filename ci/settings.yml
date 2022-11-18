@@ -138,14 +138,12 @@ jobs:
                         --arg "target"        "plaf" \
                         --arg "client"        "plip" \
                         --arg "client_secret" "plop-plop" \
-                        --arg "ca_cert"       "---cert---" \
                         --arg "config"        "cloud" \
                         --arg "name"          "plop" \
                         '{ "source": {
                               "target":        $target,
                               "client":        $client,
                               "client_secret": $client_secret,
-                              "ca_cert":       $ca_cert,
                               "config":        $config,
                               "name":          $name
                             } }' \
@@ -182,7 +180,6 @@ jobs:
                         --arg "target"        "plaf" \
                         --arg "client"        "plip" \
                         --arg "client_secret" "plop-plop" \
-                        --arg "ca_cert"       "---cert---" \
                         --arg "config"        "cloud" \
                         --arg "name"          "plop" \
                         --arg "ref"           "${latest_ref}" \
@@ -190,7 +187,6 @@ jobs:
                               "target":        $target,
                               "client":        $client,
                               "client_secret": $client_secret,
-                              "ca_cert":       $ca_cert,
                               "config":        $config,
                               "name":          $name
                             },

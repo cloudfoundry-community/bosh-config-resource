@@ -5,7 +5,7 @@ cat > $payload <&0
 target=$(jq -r '.source.target // ""' < $payload)
 client="$(jq -r '.source.client // ""' < $payload)"
 client_secret=$(jq -r '.source.client_secret // ""' < $payload)
-ca_cert=$(jq -r '.source.ca_cert // null' < $payload)
+ca_cert=$(jq -r '.source.ca_cert // ""' < $payload)
 config=$(jq -r '.source.config // ""' < $payload)
 name=$(jq -r '.source.name // ""' < $payload)
 
@@ -44,7 +44,7 @@ fi
 export BOSH_ENVIRONMENT="${target}"
 export BOSH_CLIENT="${client}"
 export BOSH_CLIENT_SECRET="${client_secret}"
-[[ "$ca_cert" != "null" ]] && export BOSH_CA_CERT="${ca_cert}"
+[[ -n ${ca_cert} ]] && export BOSH_CA_CERT="${ca_cert}"
 export BOSH_NON_INTERACTIVE=1
 
 calc_reference() {
