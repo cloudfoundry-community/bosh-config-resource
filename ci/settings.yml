@@ -129,9 +129,12 @@ jobs:
                 #!/bin/bash
                 out_dir=/tmp/mocked-bosh-cli
                 mkdir -p "${out_dir}"
+                if [[ ! -f "${out_dir}/first-invocation-args" ]]; then
+                    echo bosh "$@" > "${out_dir}/first-invocation-args"
+                fi
                 echo bosh "$@" > "${out_dir}/last-invocation-args"
                 env | grep "^BOSH_" > "${out_dir}/last-invocation-env"
-                if [[ $1 != config && $1 != update-config ]]; then
+                if [[ $1 != config && $1 != update-config && $1 != upload-release ]]; then
                     echo >&2 "Unsupported 'bosh $1' verb in this mock script"
                     exit 1
                 fi
@@ -146,12 +149,14 @@ jobs:
                         --arg "target"        "plaf" \
                         --arg "client"        "plip" \
                         --arg "client_secret" "plop-plop" \
+                        --arg "ca_cert"       "---cert---" \
                         --arg "config"        "cloud" \
                         --arg "name"          "plop" \
                         '{ "source": {
                               "target":        $target,
                               "client":        $client,
                               "client_secret": $client_secret,
+                              "ca_cert":       $ca_cert,
                               "config":        $config,
                               "name":          $name
                             } }' \
@@ -166,25 +171,44 @@ jobs:
                     cat "${out_dir}/last-invocation-args"
                     failure="true"
                 fi
-                if [[ ${latest_ref} != f7ef4d2de3c74ab6fb2ffc4f2f7dba9e7cd18fcf ]]
+                expected_ref="f7ef4d2de3c74ab6fb2ffc4f2f7dba9e7cd18fcf"
+                if [[ ${latest_ref} != ${expected_ref} ]]
                 then
-                    >&2 echo "FAIL: expected ref 'f7ef4d2de3c74ab6fb2ffc4f2f7dba9e7cd18fcf'," \
+                    >&2 echo "FAIL: expected ref '${expected_ref}'," \
                         "but got: '${latest_ref}'"
                     failure="true"
                 fi
-                if [[ $(awk -F= '/^BOSH_CLIENT_SECRET=/{print $2}' "${out_dir}/last-invocation-env") \
-                        != "plop-plop" ]]
+                actual_client=$(awk -F= '/^BOSH_CLIENT=/{print $2}' "${out_dir}/last-invocation-env")
+                if [[ ${actual_client} != "plip" ]]
                 then
-                    >&2 echo "FAIL: expected client secret 'plop-plop'," \
-                        "but got: '${latest_ref}'. Detailed environment:"
+                    >&2 echo "FAIL: expected client 'plip'," \
+                        "but got: '${actual_client}'. Detailed environment:"
                     cat "${out_dir}/last-invocation-env"
                     failure="true"
                 fi
+                actual_client_secret=$(awk -F= '/^BOSH_CLIENT_SECRET=/{print $2}' "${out_dir}/last-invocation-env")
+                if [[ ${actual_client_secret} != "plop-plop" ]]
+                then
+                    >&2 echo "FAIL: expected client secret 'plop-plop'," \
+                        "but got: '${actual_client_secret}'. Detailed environment:"
+                    cat "${out_dir}/last-invocation-env"
+                    failure="true"
+                fi
+                actual_ca_cert=$(awk -F= '/^BOSH_CA_CERT=/{print $2}' "${out_dir}/last-invocation-env")
+                if [[ ${actual_ca_cert} != "---cert---" ]]
+                then
+                    >&2 echo "FAIL: expected client secret '---cert---'," \
+                        "but got: '${actual_ca_cert}'. Detailed environment:"
+                    cat "${out_dir}/last-invocation-env"
+                    failure="true"
+                fi
+                rm "${out_dir}"/*
 
 
 
                 mkdir -p "artifact"
-                jq --null-input \
+                pulled_config_json=$(
+                    jq --null-input \
                         --arg "target"        "plaf" \
                         --arg "client"        "plip" \
                         --arg "client_secret" "plop-plop" \
@@ -201,7 +225,7 @@ jobs:
                             "version": { "ref": $ref },
                           }' \
                     | /opt/resource/in "artifact"
-
+                )
                 if [[ $(< "${out_dir}/last-invocation-args") \
                         != "bosh config --type=cloud --name=plop" ]]
                 then
@@ -213,6 +237,55 @@ jobs:
                 then
                     >&2 echo "FAIL: expected '--- { plip: plop }' content, but got:"
                     cat "artifact/cloud-config.yml"
+                    failure="true"
+                fi
+                actual_ref=$(jq --raw-output '.version.ref' <<< "${pulled_config_json}")
+                if [[ ${actual_ref} != ${expected_ref} ]]
+                then
+                    >&2 echo "FAIL: expected '${expected_ref}' ref, but got: '${actual_ref}'"
+                    failure="true"
+                fi
+                rm "${out_dir}"/*
+
+
+
+                pushed_config_json=$(
+                    jq --null-input \
+                        --arg "target"        "plaf" \
+                        --arg "client"        "plip" \
+                        --arg "client_secret" "plop-plop" \
+                        --arg "config"        "cloud" \
+                        --arg "name"          "plop" \
+                        --arg "manifest"      "cloud-config.yml" \
+                        --arg "ops_file"      "an-ops-file.yml" \
+                        --arg "some_var"      "some-value" \
+                        '{ "source": {
+                              "target":        $target,
+                              "client":        $client,
+                              "client_secret": $client_secret,
+                              "config":        $config,
+                              "name":          $name
+                            },
+                            "params": {
+                              "manifest": $manifest,
+                              "ops_files": [ $ops_file ],
+                              "vars": { "some_var": $some_var }
+                            }
+                          }' \
+                    | /opt/resource/out "artifact"
+                )
+                expected_invocation="bosh update-config --type=cloud --name=plop --ops-file=an-ops-file.yml --var=some_var=some-value cloud-config.yml"
+                if [[ $(< "${out_dir}/first-invocation-args") \
+                        != ${expected_invocation} ]]
+                then
+                    >&2 echo "FAIL: expected '${expected_invocation}' invocation, but got:"
+                    cat "${out_dir}/first-invocation-args"
+                    failure="true"
+                fi
+                actual_ref=$(jq --raw-output '.version.ref' <<< "${pushed_config_json}")
+                if [[ ${actual_ref} != ${expected_ref} ]]
+                then
+                    >&2 echo "FAIL: expected '${expected_ref}' ref, but got: '${actual_ref}'"
                     failure="true"
                 fi
 

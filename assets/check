@@ -7,25 +7,26 @@ set -e
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
 
-source $(dirname $0)/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # target not set, just emit input version, as prolly implicit get after put with source_file
-if [ -z "$(jq -r '.source.target // ""' < $payload)" ]; then
-  echo '{"version":{}}' >&3
-  exit 0
+if [[ -z $(jq --raw-output '.source.target // ""' < "${payload}") ]]; then
+    echo '{ "version": {} }' >&3
+    exit 0
 fi
 
 
 setup_bosh_access
 
-last_ref=$(jq -r '.version.ref // ""' < $payload)
+last_ref=$(jq --raw-output '.version.ref // ""' < "${payload}")
 new_ref="$(calc_reference)"
 
-if [[ "$new_ref" == "$last_ref" ]]
-then
-  echo "[]" >&3
-else
-  jq -n "[
-    {\"ref\": \"$new_ref\"}
-  ]" >&3
+if [[ ${new_ref} == ${last_ref} ]]; then
+    echo '[]' >&3
+    exit 0
 fi
+
+jq --null-input \
+    --arg "ref" "${new_ref}" \
+    '[ { "ref": $ref } ]' \
+  >&3

@@ -8,41 +8,47 @@ cd "${1}"
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
 
-source $(dirname $0)/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 setup_bosh_access
 
-manifest=$(jq -r '.params.manifest // ""' < "${payload}")
-if [ -z "$manifest" ]
-then
+manifest=$(jq --raw-output '.params.manifest // ""' < "${payload}")
+if [[ -z ${manifest} ]]; then
     echo >&2 "invalid payload (missing params.manifest):"
-    cat $payload >&2
+    cat "${payload}" >&2
     exit 1
 fi
-releases="$(jq -r '.params.releases[] // ""' < "${payload}" | xargs)"
-for release in $releases
-do
-bosh ur "$release"
+
+old_IFS="${IFS}"
+IFS=$'\n'
+
+releases=($(jq --raw-output '(.params.releases // []) | .[]' < "${payload}"))
+ops_files=($(jq --raw-output '(.params.ops_files // []) | .[]' < "${payload}"))
+vars=($(jq --raw-output '(.params.vars // {}) | to_entries[] | "\(.key)=\(.value)"' < "${payload}"))
+
+IFS="${old_IFS}"
+
+for release in "${releases[@]}"; do
+    bosh upload-release "${release}"
 done
 
-ops_arr=()
-ops_files="$(jq -r '.params.ops_files[] // ""' < "${payload}" | xargs)"
-for ops_file in $ops_files
-do
-ops_arr+=( -o "$ops_file")
+ops_args=()
+for ops_file in "${ops_files[@]}"; do
+    ops_args+=("--ops-file=${ops_file}")
 done
 
-vars_arr=()
-vars="$(jq -r '.params.vars | to_entries[] | "\"\(.key)=\(.value)\""' < "${payload}")"
-for var in $vars
-do
-vars_arr+=( -v "$var")
+vars_args=()
+for var in "${vars[@]}"; do
+    vars_args+=("--var=${var}")
 done
 
-bosh update-config --type="${config}" "${ops_arr[@]}" "${vars_arr[@]}" --name="${name}" "${manifest}"
+bosh update-config --type="${config}" --name="${name}" "${ops_args[@]}" "${vars_args[@]}" "${manifest}"
 
 new_ref="$(calc_reference)"
 
-jq -n "{
-  \"version\": {\"ref\": \"$new_ref\"},
-  \"metadata\": [{\"name\": \"sha1\", \"value\": \"$new_ref\"}]
-}" >&3
+jq --null-input \
+    --arg "ref" "${new_ref}" \
+    '{
+        "version": { "ref": $ref },
+        "metadata": [ { "name": "sha1", "value": $ref } ]
+    }' \
+  >&3

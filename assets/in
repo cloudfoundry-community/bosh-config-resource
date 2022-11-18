@@ -9,27 +9,30 @@ exec 1>&2 # redirect all output to stderr for logging
 
 destination=$1
 
-source $(dirname $0)/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # target not set, just emit input version, as prolly implicit get after put with source_file
-if [ -z "$(jq -r '.source.target // ""' < $payload)" ]; then
-  jq -r '.version | {version:.}' < $payload >&3
-  exit 0
+if [[ -z $(jq --raw-output '.source.target // ""' < "${payload}") ]]; then
+    jq --raw-output '.version | { version: . }' < "${payload}" >&3
+    exit 0
 fi
 
 setup_bosh_access
 
-if [ -z "$destination" ]; then
-  echo "usage: $0 <path/to/destination>" >&2
-  exit 1
+if [[ -z ${destination} ]]; then
+    echo "usage: $0 <path/to/destination>" >&2
+    exit 1
 fi
 
-last_ref=$(jq -r '.version.ref // ""' < $payload )
-echo $last_ref > $destination/version
+last_ref=$(jq --raw-output '.version.ref // ""' < "${payload}" )
+echo "${last_ref}" > "${destination}/version"
 
-bosh config --type="${config}" --name="${name}" > $destination/${config}-config.yml
+bosh config --type="${config}" --name="${name}" > "${destination}/${config}-config.yml"
 
-jq -n "{
-  \"version\": {\"ref\": \"$last_ref\"},
-  \"metadata\": [{\"name\": \"sha1\", \"value\": \"$last_ref\"}]
-}" >&3
+jq --null-input \
+    --arg "ref" "${last_ref}" \
+    '{
+        "version": { "ref": $ref },
+        "metadata": [ {"name": "sha1", "value": $ref } ]
+    }' \
+  >&3

@@ -85,16 +85,15 @@ manifest.
 #### Parameters
 
 * `manifest`: *Required.* Path to a BOSH config manifest file.
-* `ops_files`: Array of paths to ops files to apply
-* `releases`: Array of paths to bosh releases to upload
+* `ops_files`: *Optional.* Array of paths to ops files to apply.
+* `vars`: *Optional.* Dictionary of variables to apply.
+* `releases`: *Optional.* Array of paths to bosh releases to upload.
 * `source_file`: *Optional.* Path to a file containing a BOSH director address.
   This allows the target to be determined at runtime, e.g. by acquiring a BOSH
-  lite instance using the [Pool
-  resource](https://github.com/concourse/pool-resource).
-
+  lite instance using the
+  [Pool resource](https://github.com/concourse/pool-resource).
   If both `source_file` and `target` are specified, `source_file` takes
   precedence.
-* `vars`: variables to apply
 
 
 ``` yaml
