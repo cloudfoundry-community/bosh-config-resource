@@ -65,7 +65,7 @@ jobs:
       - in_parallel:
           - (( append ))
           - { get: alpine-latest, trigger: true, params: { format: oci } }
-          - { get: bosh-cli,      trigger: true, params: { globs: [ "*-linux-*" ] } }
+          - { get: bosh-cli,      trigger: true, params: { globs: [ "*-linux-amd64*" ] } }
 
       - # task: build-docker-image
         config:
