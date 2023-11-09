@@ -77,7 +77,7 @@ _Notes_:
 
 ## Behaviour
 
-### `in`: Download most recent config from BOSH director
+### `get` Step (`in` script): Download most recent config from BOSH director
 
 This will download the config manifest. It will place two files in the target directory:
 
@@ -90,7 +90,7 @@ This will download the config manifest. It will place two files in the target di
 
 _Note_: Only the most recent version of configs is fetchable
 
-### `out`: Update config on BOSH director
+### `put` Step (`out` script): Update config on BOSH director
 
 This will upload any given releases, and update the config(s) with the specified
 manifest(s).

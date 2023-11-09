@@ -57,8 +57,9 @@ meta:
     success_moji: ":airplane_departure:"
     fail_moji:    ":airplane_arriving:"
     upset_moji:   ":sadpanda:"
-    fail_url:     (( concat "<" meta.url "/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}| Concourse Failure! " meta.slack.upset_moji ">" ))
-    fail_text:    '(( concat meta.slack.fail_url " " meta.pipeline ": `${BUILD_JOB_NAME}` job failed" ))'
+    pipeline_url:  (( concat meta.url "/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}" ))
+    fail_link:     (( concat "<" meta.slack.pipeline_url "/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}| Concourse Failure! " meta.slack.upset_moji ">" ))
+    fail_text:    '(( concat meta.slack.fail_link " " meta.pipeline ": `${BUILD_JOB_NAME}` job failed" ))'
 
 groups:
   - name: (( grab meta.name ))
@@ -91,10 +92,12 @@ jobs:
           outputs: [ name: image ]
           caches:  [ path: cache ]
           run:     { path: build }
+        output_mapping:
+          image: built-image
 
       - put: edge
-        inputs: [ image ]
-        params: { image: image/image.tar }
+        inputs: [ built-image ]
+        params: { image: built-image/image.tar }
 
     on_failure:
       put: notify
@@ -127,6 +130,8 @@ jobs:
           outputs: [ name: image ]
           caches:  [ path: cache ]
           run:     { path: build }
+        output_mapping:
+          image: built-image
         on_success:
           put: git-pull-requests
           params:
@@ -142,23 +147,25 @@ jobs:
         image: image
         config:
           platform: linux
-          inputs:
-            - { name: git-pull-requests }
-          outputs:
-            - { name: message }
+          inputs:  [ name: git-pull-requests ]
+          outputs: [ name: message ]
           run:
             path: bash
             args:
             - -c
             - |
               set -ueo pipefail
-              pr_author=$(< git-pull-requests/.git/resource/author)
-              pr_title=$( < git-pull-requests/.git/resource/title)
-              pr_url=$(   < git-pull-requests/.git/resource/url)
-              echo "Pull request “_<${pr_url}|${pr_title}>_” by *${pr_author}*" \
+              pr_author=$(      < git-pull-requests/.git/resource/author)
+              pr_author_email=$(< git-pull-requests/.git/resource/author_email)
+              pr_title=$(       < git-pull-requests/.git/resource/title)
+              pr_url=$(         < git-pull-requests/.git/resource/url)
+              echo "Pull request “_<${pr_url}|${pr_title}>_”" \
+                "by *${pr_author:-${pr_author_email}}*" \
                 "has passed Docker build :tada:" \
-                "Merge when ready: ${pr_url}" \
+                "Merge when ready ${SUCCESS_MOJI}:"$'\n'"${pr_url}" \
                 > message/body
+          params:
+            SUCCESS_MOJI: (( grab meta.slack.success_moji ))
 
     on_success:
       put: notify
@@ -181,6 +188,7 @@ jobs:
         image: image
         config:
           platform: linux
+          inputs: [ name: git ]
           run:
             path: sh
             args:
@@ -200,8 +208,6 @@ jobs:
                 echo "hitting (+) on that shipit job..."
                 echo
               fi
-          inputs:
-          - name: git
     on_failure:
       put: notify
       params:
@@ -219,7 +225,7 @@ jobs:
           - { get: git,     trigger: true, passed: [ pre ] }
           - { get: version, params: { pre: rc } }
       - put: version
-        params: {file: version/number}
+        params: { file: version/number }
     on_failure:
       put: notify
       params:
@@ -232,8 +238,8 @@ jobs:
     public: true
     serial: true
     plan:
-      - { get: version, trigger: false, params: {bump: minor} }
-      - { put: version,                 params: {file: version/number} }
+      - { get: version, trigger: false, params: { bump: minor } }
+      - { put: version,                 params: { file: version/number } }
     on_failure:
       put: notify
       params:
@@ -246,8 +252,8 @@ jobs:
     public: true
     serial: true
     plan:
-      - { get: version, trigger: false, params: {bump: major} }
-      - { put: version,                 params: {file: version/number} }
+      - { get: version, trigger: false, params: { bump: major } }
+      - { put: version,                 params: { file: version/number } }
     on_failure:
       put: notify
       params:
