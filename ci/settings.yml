@@ -598,7 +598,7 @@ jobs:
             icon_url: (( grab meta.slack.icon ))
             text:     (( grab meta.slack.fail_text ))
 
-  - name: pre
+  - name: rc
     plan:
       - (( inline ))
       - in_parallel:
