@@ -112,6 +112,8 @@ jobs:
               - |
                 set -ueo pipefail -x
 
+                bash --version | head --lines=1
+
                 failure="false"
 
                 if [[ $(bosh --version) != "version "* ]]; then
