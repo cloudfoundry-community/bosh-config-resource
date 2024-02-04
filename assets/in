@@ -38,23 +38,7 @@ else
             '.Tables[0].Rows[] | select(.type == $type) | .name') )
     IFS="${old_IFS}"
     for name in "${config_names[@]}"; do
-        if [[ ${#includes[@]} -eq 0 ]]; then
-            is_included="true"
-        else
-            is_included="false"
-            for incl in "${includes[@]}"; do
-                if [[ "${name}" == ${incl} ]]; then
-                    is_included="true"
-                    break
-                fi
-            done
-        fi
-        for excl in "${excludes[@]}"; do
-            if [[ "${name}" == ${excl} ]]; then
-                is_included="false"
-                break
-            fi
-        done
+        is_included=$(is_name_included "${name}")
         if [[ ${is_included} == "true" ]]; then
             bosh config --type="${config}" --name="${name}" \
                 > "${destination}/${name}-${config}-config.yml"

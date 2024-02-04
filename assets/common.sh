@@ -82,7 +82,7 @@ function calc_reference() {
     if [[ "${all_configs}" == "false" ]]; then
         bosh config --type="${config}" --name="${name}"
     else
-        local config_names  name  excl  is_included  incl
+        local config_names  name  is_included
         local old_IFS="${IFS}"
         IFS=$'\n'
         config_names=( $(bosh configs --json \
@@ -91,23 +91,7 @@ function calc_reference() {
                 '.Tables[0].Rows[] | select(.type == $type) | .name') )
         IFS="${old_IFS}"
         for name in "${config_names[@]}"; do
-            if [[ ${#includes[@]} -eq 0 ]]; then
-                is_included="true"
-            else
-                is_included="false"
-                for incl in "${includes[@]}"; do
-                    if [[ "${name}" == ${incl} ]]; then
-                        is_included="true"
-                        break
-                    fi
-                done
-            fi
-            for excl in "${excludes[@]}"; do
-                if [[ "${name}" == ${excl} ]]; then
-                    is_included="false"
-                    break
-                fi
-            done
+            is_included=$(is_name_included "${name}")
             if [[ "${is_included}" == "true" ]]; then
                 bosh config --type="${config}" --name="${name}"
             fi
@@ -115,6 +99,30 @@ function calc_reference() {
     fi \
         | sha1sum \
         | cut --delimiter=" " --field="1"
+}
+
+function is_name_included() {
+    local name=$1
+
+    local is_included  incl  excl
+    if [[ ${#includes[@]} -eq 0 ]]; then
+        is_included="true"
+    else
+        is_included="false"
+        for incl in "${includes[@]}"; do
+            if [[ "${name}" == ${incl} ]]; then
+                is_included="true"
+                break
+            fi
+        done
+    fi
+    for excl in "${excludes[@]}"; do
+        if [[ "${name}" == ${excl} ]]; then
+            is_included="false"
+            break
+        fi
+    done
+    echo "${is_included}"
 }
 
 function setup_bosh_access() {
