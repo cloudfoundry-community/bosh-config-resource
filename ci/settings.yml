@@ -81,6 +81,7 @@ jobs:
       - in_parallel:
           - (( append ))
           - { get: alpine-latest, trigger: true, params: { format: oci } }
+          - { get: bosh-cli,      trigger: true, params: { globs: [ "*-linux-amd64*" ] } }
 
       - {} # put: git-pull-requests
 
@@ -89,6 +90,7 @@ jobs:
           inputs:
             - (( append ))
             - name: alpine-latest
+            - name: bosh-cli
         params:
           IMAGE_ARG_alpine: alpine-latest/image.tar
 
