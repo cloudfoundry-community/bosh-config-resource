@@ -3,7 +3,7 @@ function munge_with_source_file() {
     source_file=$(jq -r '.params.source_file // ""' < "${payload}")
     if [[ -n "${source_file}" ]]; then
         if [[ ! -f "${source_file}" ]]; then
-            echo >&2 "source_file was specified (${source_file}) but did not exist"
+            echo >&2 "The specified source_file '${source_file}' does not exist"
             cat "${payload}" >&2
             exit 1
         fi
