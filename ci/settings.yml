@@ -42,7 +42,6 @@ meta:
   github:
     owner:        cloudfoundry-community
     repo:         bosh-config-resource
-    branch:       master
     private_key:  ((github-private-key))
     access_token: ((github-access-token))
 
