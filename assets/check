@@ -21,7 +21,7 @@ setup_bosh_access
 last_ref=$(jq --raw-output '.version.ref // ""' < "${payload}")
 new_ref="$(calc_reference)"
 
-if [[ ${new_ref} == ${last_ref} ]]; then
+if [[ "${new_ref}" == "${last_ref}" ]]; then
     echo '[]' >&3
     exit 0
 fi

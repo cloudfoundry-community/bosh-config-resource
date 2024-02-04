@@ -43,14 +43,14 @@ else
         else
             is_included="false"
             for incl in "${includes[@]}"; do
-                if [[ ${name} == ${incl} ]]; then
+                if [[ "${name}" == ${incl} ]]; then
                     is_included="true"
                     break
                 fi
             done
         fi
         for excl in "${excludes[@]}"; do
-            if [[ ${name} == ${excl} ]]; then
+            if [[ "${name}" == ${excl} ]]; then
                 is_included="false"
                 break
             fi

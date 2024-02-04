@@ -1,8 +1,8 @@
 
 function munge_with_source_file() {
     source_file=$(jq -r '.params.source_file // ""' < "${payload}")
-    if [[ -n ${source_file} ]]; then
-        if [[ ! -f ${source_file} ]]; then
+    if [[ -n "${source_file}" ]]; then
+        if [[ ! -f "${source_file}" ]]; then
             echo >&2 "source_file was specified (${source_file}) but did not exist"
             cat "${payload}" >&2
             exit 1
@@ -34,34 +34,34 @@ function set_and_validate_vars() {
     excludes=($(jq --raw-output '(.source.excludes // []) | .[]' < "${payload}"))
     IFS="${old_IFS}"
 
-    if [[ ${all_configs} == "false" && -z ${name} ]]; then
+    if [[ "${all_configs}" == "false" && -z "${name}" ]]; then
         name="default"
     fi
-    if [[ ${all_configs} == "true" && -n ${name} ]]; then
+    if [[ "${all_configs}" == "true" && -n "${name}" ]]; then
         echo >&2 "invalid payload (illegal source.name when source.all is true):"
         cat "${payload}" >&2
         exit 1
     fi
 
-    if [[ -z ${target} ]]; then
+    if [[ -z "${target}" ]]; then
         echo >&2 "invalid payload (missing source.target):"
         cat "${payload}" >&2
         exit 1
     fi
 
-    if [[ -z ${client} ]]; then
+    if [[ -z "${client}" ]]; then
         echo >&2 "invalid payload (missing source.client):"
         cat "${payload}" >&2
         exit 1
     fi
 
-    if [[ -z ${client_secret} ]]; then
+    if [[ -z "${client_secret}" ]]; then
         echo >&2 "invalid payload (missing source.client_secret):"
         cat "${payload}" >&2
         exit 1
     fi
 
-    if [[ ${config} != "cloud" && ${config} != "runtime" ]]; then
+    if [[ "${config}" != "cloud" && "${config}" != "runtime" ]]; then
         echo >&2 "invalid payload (source.config should be 'cloud' or 'runtime'):"
         cat "${payload}" >&2
         exit 1
@@ -79,7 +79,7 @@ function export_bosh_vars() {
 }
 
 function calc_reference() {
-    if [[ ${all_configs} == "false" ]]; then
+    if [[ "${all_configs}" == "false" ]]; then
         bosh config --type="${config}" --name="${name}"
     else
         local config_names  name  excl  is_included  incl
@@ -96,19 +96,19 @@ function calc_reference() {
             else
                 is_included="false"
                 for incl in "${includes[@]}"; do
-                    if [[ ${name} == ${incl} ]]; then
+                    if [[ "${name}" == ${incl} ]]; then
                         is_included="true"
                         break
                     fi
                 done
             fi
             for excl in "${excludes[@]}"; do
-                if [[ ${name} == ${excl} ]]; then
+                if [[ "${name}" == ${excl} ]]; then
                     is_included="false"
                     break
                 fi
             done
-            if [[ ${is_included} == "true" ]]; then
+            if [[ "${is_included}" == "true" ]]; then
                 bosh config --type="${config}" --name="${name}"
             fi
         done

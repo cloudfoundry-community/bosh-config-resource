@@ -43,7 +43,7 @@ for var in "${vars[@]}"; do
     vars_args+=("--var=${var}")
 done
 
-if [[ ${all_configs} == "false" ]]; then
+if [[ "${all_configs}" == "false" ]]; then
     bosh update-config --type="${config}" --name="${name}" \
         "${ops_args[@]}" "${vars_args[@]}" "${manifest}"
 else
@@ -55,19 +55,19 @@ else
         else
             is_included="false"
             for incl in "${includes[@]}"; do
-                if [[ ${name} == ${incl} ]]; then
+                if [[ "${name}" == ${incl} ]]; then
                     is_included="true"
                     break
                 fi
             done
         fi
         for excl in "${excludes[@]}"; do
-            if [[ ${name} == ${excl} ]]; then
+            if [[ "${name}" == ${excl} ]]; then
                 is_included="false"
                 break
             fi
         done
-        if [[ ${is_included} == "true" ]]; then
+        if [[ "${is_included}" == "true" ]]; then
             bosh update-config --type="${config}" --name="${name}" \
                 "${ops_args[@]}" "${vars_args[@]}" "${file}"
         fi

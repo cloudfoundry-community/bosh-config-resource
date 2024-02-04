@@ -37,15 +37,18 @@ resource_types:
   on _all_ configs of the type spcified with `config`. Defaults to `false`.
 * `includes`: *Optional.* An allow-list of config names. When `all` is set to
   `true`, an array of config names to include. If not empty, any config name
-  that is not in this array is not considered.
+  that is not in this array is not considered. Globbing _à la Bash_ is supported.
 * `excludes`: *Optional.* A deny-list list of config names. When `all` is set to
   `true`, an array of config names to exclude. Any config name that is in this
-  array is not considered.
-
+  array is not considered. This takes precedence over anything listed in the
+  `includes` array. Globbing _à la Bash_ is supported.
 
 ### Example
 
-``` yaml
+In this first example, the cloud config named `my-named-config` is watched at
+(by `check` steps), fetched (by `get` steps) or updated (by `put` steps).
+
+```yaml
 - name: staging
   type: bosh-config
   source:
@@ -55,6 +58,24 @@ resource_types:
     ca_cert: "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----"
     config: cloud
     name: my-named-config
+```
+
+In the second example below, all could configs which name matches the
+`*-network` Bash-globbing pattern will be watched at (by `check` steps),
+fetched (by `get` steps) or updated (by `put` steps).
+
+```yaml
+- name: network-configs
+  type: bosh-config
+  source:
+    target: https://bosh.example.com:25555
+    client: admin
+    client_secret: admin
+    ca_cert: "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----"
+    config: cloud
+    all: true
+    includes:
+      - "*-network"
 ```
 
 ### Dynamic Source Configuration
