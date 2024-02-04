@@ -98,6 +98,12 @@ _Notes_:
 
 ## Behaviour
 
+### `check` Step (`check` script): Check for any change on one or many configs
+
+This will generate a version based on the SHA-1 fingerprint of the specified
+config (if `all` is unspecified or `false`), or the set of matching configs
+(if `all` is `true`).
+
 ### `get` Step (`in` script): Download most recent config from BOSH director
 
 This will download the config manifest. It will place two files in the target directory:
