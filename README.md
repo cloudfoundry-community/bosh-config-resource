@@ -1,9 +1,10 @@
 # BOSH Config Resource
 
-A resource that will allow updating cloud and runtime configs using the
-[BOSH CLI v2][cli_v2].
+A resource that will allow updating cloud and runtime configs on a live Bosh
+server, using the [Bosh CLI v2][cli_v2].
 
 [cli_v2]: https://bosh.io/docs/cli-v2/
+
 
 ## Adding to your pipeline
 
@@ -17,6 +18,7 @@ resource_types:
   source:
     repository: cfcommunity/bosh-config-resource
 ```
+
 
 ## Source Configuration
 
@@ -96,6 +98,7 @@ _Notes_:
  - `target` must **ONLY** be configured via the `source_file` otherwise the implicit `get` will fail after the `put`.
  - This is only supported for a `put`.
 
+
 ## Behaviour
 
 ### `check` Step (`check` script): Check for any change on one or many configs
@@ -148,7 +151,6 @@ names defined in the keys of the `params.manifests` dictionary.
   If both `source_file` and `target` are specified, `source_file` takes
   precedence.
 
-
 ``` yaml
 # Update config
 - put: staging
@@ -166,7 +168,6 @@ names defined in the keys of the `params.manifests` dictionary.
 ```
 
 
-
 ## Authors and License
 
 Copyright © 2017-2020, Gwen Ivett, Geoff Franks, Ruben Koster, Konstantin
@@ -175,7 +176,7 @@ Troshin, Konstantin Kiess, Andrei Krasnitski, Daniel Jones
 Copyright © 2022-present, Benjamin Gandon, Gstack
 
 Like Concourse, the BOSH config resource is released under the terms of the
-[Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
+[Apache 2.0 license](LICENSE.txt).
 
 <!--
 # Local Variables:
