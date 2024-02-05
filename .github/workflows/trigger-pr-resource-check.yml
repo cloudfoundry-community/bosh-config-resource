@@ -11,4 +11,4 @@ jobs:
           concourse-team:          gk-plat-devs
           concourse-pipeline:      bosh-config-resource
           concourse-resource:      git-pull-requests
-          concourse-webhook-token: ${{ secrets.CONCOURSE_WEBHOOK_TOKEN }}
+          concourse-webhook-token: ${{ secrets.GK_CONCOURSE_WEBHOOK_TOKEN }}
