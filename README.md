@@ -1,3 +1,10 @@
+[![Docker Stars](https://img.shields.io/docker/stars/cfcommunity/bosh-config-resource.svg?style=plastic)](https://registry.hub.docker.com/v2/repositories/cfcommunity/bosh-config-resource/stars/count/)
+[![Docker pulls](https://img.shields.io/docker/pulls/cfcommunity/bosh-config-resource.svg?style=plastic)](https://registry.hub.docker.com/v2/repositories/cfcommunity/bosh-config-resource)
+<!--
+[![Concourse Build](https://ci.gstack.io/api/v1/teams/gk-plat-devs/pipelines/slack-notification-resource/jobs/build/badge)](https://ci.gstack.io/teams/gk-plat-devs/pipelines/slack-notification-resource)
+-->
+[![dockeri.co](https://dockeri.co/image/cfcommunity/bosh-config-resource)](https://hub.docker.com/r/cfcommunity/bosh-config-resource/)
+
 # BOSH Config Resource
 
 A resource that will allow updating cloud and runtime configs on a live Bosh
